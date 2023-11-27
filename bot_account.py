@@ -15,7 +15,7 @@ class Margin_account():
         self.base_coin = 'USDT'
         self.assets = []
         self.available_funds = 0
-        self.max_leverage = 4
+        self.max_leverage = 3
         self.max_leverage_funds = self.available_funds * self.max_leverage
         self.indiv_max_leverage_funds = self.max_leverage_funds/26
         self.initial_amount = 11
@@ -28,6 +28,8 @@ class Margin_account():
         
         self.balances = {}
         self.loans = {}
+        self.t_balances = {self.base_coin:0}
+        self.t_loans = {self.base_coin:0}
         
         self.client = Client('HxC4DjBJjOv6lqiDdgnF1c7SW3SYYKnmvRyg1KAW4UY4oa5Ndbz3yAi7Z4TtXky9', 'RwwVEqxVzRmtcxf8sAvMcu6kwz6OxEtxsbcTBDTjgHrsmzqgpCjFcBq0aeW93rEU')
         self.price_precision = {'BTC':2, 'ETH':2, 'BNB':1, 'XRP':4, 'ADA':4, 'LTC':2, 'SOL':2, 'ATOM':3, 'BCH':1, 
@@ -37,7 +39,7 @@ class Margin_account():
                                 'DOGE':0, 'DOT':2, 'EOS':1, 'LINK':2, 'TRX':1, 'SHIB':0, 'AVAX':2, 'XLM':0, 'UNI':2, 
                                 'ETC':2, 'FIL':2, 'HBAR':0, 'VET':1, 'NEAR':1, 'GRT':0, 'AAVE':3, 'DASH':3, 'MATIC':1, 'USDT':2}
         
-        self.open_order_list = []
+        # self.open_order_list = []
     
     def round_decimals_up(self, number, decimals):
         factor = 10 ** decimals
@@ -47,19 +49,19 @@ class Margin_account():
         factor = 10 ** decimals
         return math.floor(number * factor) / factor
     
-    
     def get_initial_base_balances(self):
         
         try:
-            # for item in self.client.get_isolated_margin_account()['assets']:
             for item in self.client.get_margin_account()['userAssets']:
                 if item['asset'] == self.base_coin:
                     base_balance = float(self.round_decimals_down(float(item['free']), 2))
                     base_loan = float(self.round_decimals_down(float(item['borrowed']) + float(item['interest']), 2))
+            self.t_balances[self.base_coin] = base_balance
         except Exception as e:
             print(f"Get initial base balance error: {e}")
             traceback.print_exc()
             self.notifier.register_output('Error', 'general', 'general', 'Get initial base balance error: ' + str(e))
+            self.notifier.send_error('General', f"Get initial base balance error: {e}")
         return base_balance, base_loan
     
     def get_base_balances(self, asset):
@@ -73,6 +75,7 @@ class Margin_account():
             print(f"Get base balance error: {e}")
             traceback.print_exc()
             self.notifier.register_output('Error', asset, 'general', 'Get base balance error: ' + str(e))
+            self.notifier.send_error(asset, f"Get base balance error: {e}")
         return
     
     def get_asset_balances(self, asset, precision):
@@ -86,6 +89,7 @@ class Margin_account():
             print(f"Get asset balance error: {e}")
             traceback.print_exc()
             self.notifier.register_output('Error', asset, 'general', 'Get asset balance error: ' + str(e))
+            self.notifier.send_error(asset, f"Get asset balance error: {e}")
         return
     
     def create_loan(self, order_qty, precision, asset, symbol):

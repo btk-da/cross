@@ -116,8 +116,6 @@ class Symbol_short(object):
         self.open_price_list = np.append(self.open_price_list, [price])
         self.average_price = np.dot(self.open_price_list, self.open_asset_amount_list)/self.asset_acc 
         
-        self.master.account.check_balances(time, 'Short Open Placed')
-        
         self.master.account.funds = self.master.account.funds + amount*price
         self.master.account.short_acc = self.master.account.short_acc + amount*price
         self.master.account.t_balances[self.asset] = self.master.account.t_balances[self.asset] - amount
@@ -198,8 +196,6 @@ class Symbol_short(object):
         self.open_price_list = np.append(self.open_price_list, [price])
         self.average_price = np.dot(self.open_price_list, self.open_asset_amount_list)/self.asset_acc
         
-        self.master.account.check_balances(time, 'Short Average Placed')
-
         self.master.account.funds = self.master.account.funds + amount*price          
         self.master.account.short_acc = self.master.account.short_acc + amount*price
         self.master.account.t_balances[self.asset] = self.master.account.t_balances[self.asset] - amount
@@ -278,8 +274,6 @@ class Symbol_short(object):
         usd_profit = profit * self.acc - self.commission
         self.duration = time - self.open_time
         
-        self.master.account.check_balances(time, 'Short Close Placed')
-
         self.master.account.funds = self.master.account.funds - self.acc 
         self.master.account.short_acc = self.master.account.short_acc - self.acc
         self.master.account.t_balances[self.asset] = self.master.account.t_balances[self.asset] + amount
@@ -350,6 +344,8 @@ class Symbol_short(object):
                 self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64')
                 self.master.account.notifier.register_output('Info', self.name, self.side, 'Operation no ponderated')
             
+            if len(self.open_order_id) != 0:
+                self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=self.open_order_id['orderId'])
             self.base_open_trail = price
             self.open_trail_point = self.base_open_trail*(1 - self.sell_trail/100)
             self.open_point = price
@@ -359,6 +355,7 @@ class Symbol_short(object):
                 self.can_open_trail = True
                 self.can_open = False
                 self.master.account.notifier.send_order_placed('OPEN', self, self.open_trail_point, buy_amount/self.open_trail_point)
+                self.master.account.check_balances(time, 'Short Open Placed')
             else:
                 self.can_open_trail = False
                 self.can_open = True
@@ -368,6 +365,8 @@ class Symbol_short(object):
             
         if price > self.average_point and self.can_average:
             
+            if len(self.open_order_id) != 0:
+                self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=self.open_order_id['orderId'])
             self.base_average_trail = price
             self.average_trail_point = self.base_average_trail*(1 - self.sell_trail/100)
             buy_amount = self.calculate_interp()              
@@ -378,6 +377,7 @@ class Symbol_short(object):
                 self.can_close_trail = False
                 self.can_close = True
                 self.master.account.notifier.send_order_placed('AVERAGE', self, self.average_trail_point, buy_amount/self.average_trail_point)
+                self.master.account.check_balances(time, 'Short Average Placed')
             else:
                 self.can_average_trail = False
                 self.can_average = True
@@ -389,6 +389,8 @@ class Symbol_short(object):
                         
         if price < self.close_point and self.can_close:
             
+            if len(self.open_order_id) != 0:
+                self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=self.open_order_id['orderId'])
             self.base_close_trail = price
             self.close_trail_point = self.base_close_trail*(1 + self.buy_trail/100)
             check = self.master.account.create_buy_order(self, self.asset_acc, self.close_trail_point, 'CLOSE')
@@ -398,6 +400,7 @@ class Symbol_short(object):
                 self.can_close_trail = True
                 self.can_close = False
                 self.master.account.notifier.send_order_placed('CLOSE', self, self.close_trail_point, self.asset_acc)
+                self.master.account.check_balances(time, 'Short Close Placed')
             else:
                 self.can_average_trail = False
                 self.can_average = True

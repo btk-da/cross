@@ -105,7 +105,7 @@ class Notifier():
         
             message = ('#OPERATION CLOSED' + '\n' + 
                        'Profit ($): ' + str(round(client_profit, 4)) + '\n' +
-                       'Total: ' + str(round(self.eqs[client], 2)))
+                       'Total: ' + str(round(self.eqs[client], 4)))
             try:
                 requests.post('https://api.telegram.org/bot' + self.token + '/sendMessage', data={'chat_id': self.ids[client], 'text': message, 'parse_mode': 'HTML'})
             except Exception as e:

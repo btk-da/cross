@@ -3,13 +3,10 @@ from sqlalchemy import create_engine, Column, Float, Integer, String
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 sql_engine = create_engine('mysql+pymysql://server0:donoso850@localhost/bot_database')
-# sql_engine = create_engine('mysql+pymysql://server0:donoso850@localhost/eth_database') # TEST
 sql_base = declarative_base()
 session = sessionmaker(bind=sql_engine)
 sql_session = session()
-sql_assets = ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'LTC', 'SOL', 'ATOM', 'BCH', 'DOGE', 'DOT', 'EOS', 'LINK', 
-          'TRX', 'SHIB', 'AVAX', 'XLM', 'UNI', 'ETC', 'FIL', 'HBAR', 'VET', 'NEAR', 'GRT', 'AAVE', 'DASH', 'MATIC']
-# sql_assets = ['AAVE'] # TEST
+sql_assets = ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'LTC', 'SOL', 'ATOM', 'BCH', 'DOGE', 'DOT', 'EOS', 'LINK', 'TRX', 'SHIB', 'AVAX', 'XLM', 'UNI', 'ETC', 'FIL', 'HBAR', 'VET', 'NEAR', 'GRT', 'AAVE', 'DASH', 'MATIC']
 
 def init_database(assets, backup):
     
@@ -45,11 +42,13 @@ def init_database(assets, backup):
         Date = Column(String(50))
         Name = Column(String(50))
         Price = Column(Float)
-        AveragePoint = Column(Float)
-        AveragePrice = Column(Float)
-        Close_Point = Column(Float)
-        Buy_trail_point = Column(Float)
-        Sell_trail_point = Column(Float)
+        Open_point = Column(Float)
+        Average_point = Column(Float)
+        Average_price = Column(Float)
+        Close_point = Column(Float)
+        Open_trail_point = Column(Float)
+        Average_trail_point = Column(Float)
+        Close_trail_point = Column(Float)
     tables['status'] = Table2
 
     class Table3(sql_base):
@@ -65,7 +64,6 @@ def init_database(assets, backup):
         Amount = Column(Float)
         Cost = Column(Float)
         Commission = Column(Float)
-        Order_id = Column(Float)
     tables['orders'] = Table3
         
     class Table4(sql_base):
@@ -130,7 +128,6 @@ def init_database(assets, backup):
         Amount = Column(Float)
         Filled = Column(Float)
         Timer=Column(Float)
-
     tables['open_orders'] = Table9
 
     class Table10(sql_base):
@@ -142,6 +139,9 @@ def init_database(assets, backup):
         K = Column(Float)
         Buy_trail = Column(Float)
         Sell_trail = Column(Float)
+        Drop_param = Column(Float)
+        Level = Column(Float)
+        Pond = Column(Float)
         Switch = Column(String(50))
         Symbol_status = Column(String(50))
         Can_open = Column(String(50))
@@ -150,17 +150,30 @@ def init_database(assets, backup):
         Can_open_trail = Column(String(50))
         Can_average_trail = Column(String(50))
         Can_close_trail = Column(String(50))
-
     tables['symbols'] = Table10
     
     class Table11(sql_base):
         __tablename__ = 'ponderation'
         id = Column(Integer, primary_key=True)
         Date = Column(String(50))
-        Asset = Column(String(50))
+        Name = Column(String(50))
         Long_ratio = Column(Float)
         Short_ratio = Column(Float)
     tables['ponderation'] = Table11
+    
+    class Table12(sql_base):
+        __tablename__ = 'balances'
+        id = Column(Integer, primary_key=True)
+        Date = Column(String(50))
+        Asset = Column(String(50))
+        Base_balance = Column(Float)
+        Base_t_balance = Column(Float)
+        Base_loan = Column(Float)
+        Asset_balance = Column(Float)
+        Asset_t_balance = Column(Float)
+        Asset_loan = Column(Float)
+        Action = Column(String(50))
+    tables['balances'] = Table12
     
     if backup == True:
         print('database charged')

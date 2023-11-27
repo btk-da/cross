@@ -25,7 +25,6 @@ class Symbol_long(object):
 
         self.switch = True
         self.status = False
-        #self.can_open = True
         self.can_open = False
         self.can_average = False
         self.can_close = False
@@ -42,96 +41,115 @@ class Symbol_long(object):
         self.open_price_list = np.array([])
         self.open_asset_amount_list = np.array([])
         self.asset_acc = 0     
-        self.asset_average_price = 0
-        self.buy_amount = 0
+        self.open_point = 0
+        self.average_price = 0
         self.average_point = 0.0000000001
         self.close_point = 1000000000
-        self.average_price = 0
         self.buy_level = 0
         self.price = []
         self.live_profit = 0
-        self.buy_trail_point = 0
-        self.sell_trail_point = 0
-        self.base_buy_trail_min = 0
-        self.base_sell_trail_max = 0
-        self.base_buy_trail_list = []
-        self.base_sell_trail_list = []
+        
+        self.base_open_trail = 0
+        self.base_average_trail = 0
+        self.base_close_trail = 0
+        self.open_trail_point = 0
+        self.average_trail_point = 0
+        self.close_trail_point = 0
+        
         self.interp_range = np.array(np.arange(0,50),dtype='float64')
         self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64')
-        self.drop_limit = 18
+        self.drop_limit = 20
         self.drop_distribution = (1**np.array(np.arange(0,50)) * self.drop).astype('float64')
         self.drop_distribution[self.drop_limit:] = self.drop_distribution[self.drop_limit:] + self.drop_param
-        
-        self.timer = 0
+
         self.commission = 0
-        self.order_id = 0
-        
+        self.open_order_id = []
         self.last_buy_price = []
         
     def trading_points(self):
         
         drop = np.interp(self.buy_level, self.interp_range, self.drop_distribution)        
         self.average_point = self.last_buy_price * (1 - drop/100)
-        self.close_point = self.asset_average_price * (1 + self.profit/100)
+        self.close_point = self.average_price * (1 + (self.profit+self.sell_trail)/100)
         return
         
     def open_trailing(self, time, price):
         
-        self.base_buy_trail_list.append(price)
-        self.base_buy_trail_min = min(self.base_buy_trail_list)
-        self.buy_trail_point = self.base_buy_trail_min*(1 + self.buy_trail/100)
-
-        if price >= self.buy_trail_point:
-            buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
-            self.master.account.create_buy_order(self, buy_amount/price, price, 'OPEN')
-            self.buy_trail_point = 0
-        
+        if len(self.open_order_id) != 0:
+            if price < self.base_open_trail:
+                self.base_open_trail = price
+                self.open_trail_point = self.base_open_trail*(1 + self.buy_trail/100)
+    
+                open_order = self.master.account.client.get_margin_order(symbol=self.open_order_id['symbol'], orderId=self.open_order_id['orderId'])
+    
+                if open_order['status'] == 'FILLED':
+                    self.master.account.check_filled_order(self)
+    
+                elif open_order['status'] == 'NEW':
+                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    self.open_order_id = []
+                    buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
+                    check = self.master.account.create_buy_order(self, buy_amount/self.open_trail_point, self.open_trail_point, 'OPEN')
+    
+                elif open_order['status'] == 'PARTIALLY FILLED':
+                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    self.open_order_id = []
+                    partial_amount, partial_price = self.master.account.check_partial_order(self)
+                    self.master.account.funds = self.master.account.funds - partial_amount*partial_price
+                    self.master.account.long_acc = self.master.account.long_acc + partial_amount*partial_price
+                    buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
+                    check = self.master.account.create_buy_order(self, (buy_amount/self.open_trail_point - partial_amount), self.open_trail_point, 'OPEN')
+        else:
+            self.can_open_trail = False
+            self.can_open = True
         return
         
     def open_order(self, time, price, amount, comision):
         
-        self.open_amount_list = np.append(self.open_amount_list, [amount*price])
-        self.open_price_list = np.append(self.open_price_list, [price])
         self.open_time = time
         self.open_price = price
+
+        self.open_amount_list = np.append(self.open_amount_list, [amount*price])
         self.acc = np.sum([self.open_amount_list])
-        self.average_price = np.dot(self.open_price_list, self.open_amount_list)/self.acc
         self.open_asset_amount_list = np.append(self.open_asset_amount_list, [amount])
-        self.asset_acc = amount
-        self.asset_average_price = price
-        self.master.account.repay_loan(self, amount, price, 'Asset')
+        self.asset_acc = np.sum([self.open_asset_amount_list])
+        self.open_price_list = np.append(self.open_price_list, [price])
+        self.average_price = np.dot(self.open_price_list, self.open_asset_amount_list)/self.asset_acc
+        
+        self.master.account.check_balances(time, 'Long Open Placed')
+        
         self.master.account.funds = self.master.account.funds - amount*price
         self.master.account.long_acc = self.master.account.long_acc + amount*price
-        
-        drop = np.interp(self.buy_level, self.interp_range, self.drop_distribution)        
-                        
+        self.master.account.t_balances[self.asset] = self.master.account.t_balances[self.asset] + amount
+        self.master.account.t_balances[self.master.account.base_coin] = self.master.account.t_balances[self.master.account.base_coin] - amount*price - comision
+               
+        drop = np.interp(self.buy_level, self.interp_range, self.drop_distribution)
+
         self.average_point = price * (1 - drop/100)
-        self.close_point = self.asset_average_price * (1 + self.profit/100)
+        self.close_point = self.average_price * (1 + (self.profit+self.sell_trail)/100)
     
         self.status = True
         self.can_average = True
         self.can_close = True
-        self.buy_trail_point = 0
+        self.can_open_trail = False
         
         self.master.wr_list[self.nick][self.side] = self.acc/self.master.account.indiv_max_leverage_funds*100
-
-        # print('Long_ratio= ' + str(self.master.wr_list[self.nick]), )
-
-        # new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Asset=self.asset, Long_ratio=self.master.wr_list[self.nick]['Long'], Short_ratio=self.master.wr_list[self.nick]['Short'])
-        # sql_session.add(new_row)
-        # sql_session.commit()
-        self.master.calculate_ratios(time)
+        new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Name=self.name, Long_ratio=self.master.wr_list[self.nick]['Long'], Short_ratio=self.master.wr_list[self.nick]['Short'])
+        sql_session.add(new_row)
+        sql_session.commit()
         
         self.master.account.notifier.send_open_order_filled(price, amount, self)
-        
+        self.master.account.check_balances(time, 'Long Open Filled')
+    
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
-        new_row = self.master.account.notifier.tables['orders'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, Type='Buy', BuyLevel=self.buy_level, Price=price, Amount=amount, Cost=round(self.acc), Commission=comision, Order_id=self.order_id)
+        new_row = self.master.account.notifier.tables['orders'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, Type='Buy', BuyLevel=self.buy_level, Price=price, Amount=amount, Cost=round(self.acc), Commission=comision)
         sql_session.add(new_row)
         try:
             sql_session.commit()
         except exc.OperationalError as e:
             print(f"Error de conexión a la base de datos: {e}")
+            self.master.account.notifier.send_error(self.name, f"Error de conexión a la base de datos: {e}")
             sql_session.rollback()
         
         self.last_buy_price = price
@@ -139,112 +157,140 @@ class Symbol_long(object):
         return
     
     def average_trailing(self, time, price):
-        
-        self.base_buy_trail_list.append(price)
-        self.base_buy_trail_min = min(self.base_buy_trail_list)
-        self.buy_trail_point = self.base_buy_trail_min*(1 + self.buy_trail/100)
-        
-        if price >= self.buy_trail_point and price <= self.average_point:
-            
-            total_drop = (1 - price/self.open_price) * 100
-            if total_drop <= self.drop_limit*self.drop:
-                buy_level = round(total_drop / self.drop, 1)
-            else:
-                buy_level = round(((total_drop - self.drop_limit*self.drop) / (self.drop + self.drop_param) + self.drop_limit), 1)
-            buy_amount = np.interp(buy_level, self.interp_range, self.buy_distribution) - self.acc
-            
-            if self.master.account.funds - buy_amount < -self.master.account.max_leverage_funds or self.master.account.long_acc + buy_amount > self.master.account.max_leverage_funds:
-                free_funds = self.master.account.max_leverage_funds - self.master.account.long_acc
-                print('insufficient funds to long average, free funds: ', free_funds, buy_amount, self.master.account.funds, self.master.account.long_acc, self.master.account.max_leverage_funds)
-                self.master.account.notifier.register_output('Warn', self.name, self.side, 'Insufficient funds to long average, free funds: ' + str(free_funds))
-                if free_funds > 100:
-                    self.master.account.create_buy_order(self, free_funds/price, price, 'AVERAGE')
-                    self.buy_trail_point = 0
-                else:
-                    print('insufficient free funds: ', free_funds)
-            else:
-                self.master.account.create_buy_order(self, buy_amount/price, price, 'AVERAGE')
-                self.buy_trail_point = 0
+
+        if len(self.open_order_id) != 0:
+            if price < self.base_average_trail:
+                self.base_average_trail = price
+                self.average_trail_point = self.base_average_trail*(1 + self.buy_trail/100)
+                
+                open_order = self.master.account.client.get_margin_order(symbol=self.open_order_id['symbol'], orderId=self.open_order_id['orderId'])
+                
+                if open_order['status'] == 'FILLED':
+                    self.master.account.check_filled_order(self)
+    
+                elif open_order['status'] == 'NEW':
+                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    self.open_order_id = []
+                    buy_amount = self.calculate_interp()
+                    check = self.master.account.create_buy_order(self, buy_amount/self.average_trail_point, self.average_trail_point, 'AVERAGE')
+                
+                elif open_order['status'] == 'PARTIALLY FILLED':
+                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    self.open_order_id = []
+                    partial_amount, partial_price = self.master.account.check_partial_order(self)
+                    self.master.account.funds = self.master.account.funds - partial_amount*partial_price
+                    self.master.account.long_acc = self.master.account.long_acc + partial_amount*partial_price
+                    buy_amount = self.calculate_interp()           
+                    check = self.master.account.create_buy_order(self, (buy_amount/self.average_trail_point - partial_amount), self.average_trail_point, 'AVERAGE') 
+        else:
+            self.can_average_trail = False
+            self.can_average = True
             
         return
 
     def average_order(self, time, price, amount, comision):
         
         self.open_amount_list = np.append(self.open_amount_list, [amount*price])
-        self.open_price_list = np.append(self.open_price_list, [price])
         self.acc = np.sum([self.open_amount_list])
-        self.average_price = round(np.dot(self.open_price_list, self.open_amount_list)/self.acc, self.master.account.price_precision[self.asset])
         self.open_asset_amount_list = np.append(self.open_asset_amount_list, [amount])
         self.asset_acc = np.sum([self.open_asset_amount_list])
-        self.asset_average_price = np.dot(self.open_price_list, self.open_asset_amount_list)/self.asset_acc
-        self.master.account.repay_loan(self, amount, price, 'Asset')
+        self.open_price_list = np.append(self.open_price_list, [price])
+        self.average_price = np.dot(self.open_price_list, self.open_asset_amount_list)/self.asset_acc
+        
+        self.master.account.check_balances(time, 'Long Average Placed')
+
         self.master.account.funds = self.master.account.funds - amount*price
         self.master.account.long_acc = self.master.account.long_acc + amount*price
+        self.master.account.t_balances[self.asset] = self.master.account.t_balances[self.asset] + amount
+        self.master.account.t_balances[self.master.account.base_coin] = self.master.account.t_balances[self.master.account.base_coin] - amount*price - comision
         
         total_drop = (1 - price/self.open_price) * 100
         if total_drop <= self.drop_limit*self.drop:
             self.buy_level = round(total_drop / self.drop, 1)
         else:
             self.buy_level = round(((total_drop - self.drop_limit*self.drop) / (self.drop + self.drop_param) + self.drop_limit), 1)
-        last_drop = (1 - price/self.last_buy_price) * 100
             
-        drop = np.interp(self.buy_level, self.interp_range, self.drop_distribution)        
+        last_drop = (1 - price/self.last_buy_price) * 100
+    
+        drop = np.interp(self.buy_level, self.interp_range, self.drop_distribution)
         self.average_point = price * (1 - drop/100)
-        self.close_point = self.asset_average_price * (1 + self.profit/100) 
+        self.close_point = self.average_price * (1 + (self.profit+self.sell_trail)/100) 
 
         self.can_average = True
-        self.buy_trail_point = 0
+        self.can_average_trail = False
         
         self.master.account.notifier.send_average_order_filled(price, amount, self, last_drop)
+        self.master.account.check_balances(time, 'Long Average Filled')
         
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
-        new_row = self.master.account.notifier.tables['orders'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, Type='Buy', BuyLevel=self.buy_level, Price=price, Amount=amount, Cost=round(self.acc), Commission=comision, Order_id=self.order_id)
+        new_row = self.master.account.notifier.tables['orders'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, Type='Buy', BuyLevel=self.buy_level, Price=price, Amount=amount, Cost=round(self.acc), Commission=comision)
         sql_session.add(new_row)
         try:
             sql_session.commit()
         except exc.OperationalError as e:
             print(f"Error de conexión a la base de datos: {e}")
+            self.master.account.notifier.send_error(self.name, f"Error de conexión a la base de datos: {e}")
             sql_session.rollback()
             
         self.last_buy_price = price
-        
         self.master.wr_list[self.nick][self.side] = self.acc/self.master.account.indiv_max_leverage_funds*100
-        self.master.calculate_ratios(time)
-
-        # new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Asset=self.asset, Long_ratio=self.master.wr_list[self.nick]['Long'], Short_ratio=self.master.wr_list[self.nick]['Short'])
-        # sql_session.add(new_row)
-        # sql_session.commit()
-
+        new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Name=self.name, Long_ratio=self.master.wr_list[self.nick]['Long'], Short_ratio=self.master.wr_list[self.nick]['Short'])
+        sql_session.add(new_row)
+        sql_session.commit()
+        
         return
     
     def close_trailing(self, time, price):
         
-        self.base_sell_trail_list.append(price)
-        self.base_sell_trail_max = max(self.base_sell_trail_list)
-        self.sell_trail_point = self.base_sell_trail_max*(1 - self.sell_trail/100)
-
-        if price <= self.sell_trail_point and price >= self.close_point:
-            self.master.account.create_sell_order(self, self.asset_acc, price, 'CLOSE')
-        
+        if len(self.open_order_id) != 0:
+            if price > self.base_close_trail:
+                self.base_close_trail = price
+                self.close_trail_point = self.base_close_trail*(1 - self.sell_trail/100)
+    
+                open_order = self.master.account.client.get_margin_order(symbol=self.open_order_id['symbol'], orderId=self.open_order_id['orderId'])
+    
+                if open_order['status'] == 'FILLED':
+                    self.master.account.check_filled_order(self)
+    
+                elif open_order['status'] == 'NEW':
+                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    self.open_order_id = []
+                    check = self.master.account.create_sell_order(self, self.asset_acc, self.close_trail_point, 'CLOSE')
+    
+                elif open_order['status'] == 'PARTIALLY FILLED':
+                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    self.open_order_id = []
+                    partial_amount, partial_price = self.master.account.check_partial_order(self)
+                    self.master.account.funds = self.master.account.funds + partial_amount*partial_price
+                    self.master.account.long_acc = self.master.account.long_acc - partial_amount*partial_price
+                    check = self.master.account.create_sell_order(self, self.asset_acc, self.close_trail_point, 'CLOSE')
+        else:
+            self.can_close_trail = False
+            self.can_close = True
         return
 
     def close_order(self, time, price, amount, comision):
                 
-        profit = (price/self.asset_average_price - 1)
+        profit = (price/self.average_price - 1)
         usd_profit = profit * self.acc - self.commission
         self.duration = time - self.open_time
-        self.master.account.funds = self.master.account.funds + amount*price
+        
+        self.master.account.check_balances(time, 'Long CLose Placed')
+        
+        self.master.account.funds = self.master.account.funds + self.acc
         self.master.account.long_acc = self.master.account.long_acc - self.acc
-        self.master.account.repay_loan(self, amount, price, 'Base')
+        self.master.account.t_balances[self.asset] = self.master.account.t_balances[self.asset] - amount
+        self.master.account.t_balances[self.master.account.base_coin] = self.master.account.t_balances[self.master.account.base_coin] + amount*price - comision
         
         covered = round(((1 - self.last_buy_price/self.open_price) * 100), 2)
 
         self.master.account.notifier.send_transaction_closed_filled(self, profit, usd_profit, self.commission, price, covered)
-        
+        self.master.account.check_balances(time, 'Long Close Filled')
+
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
-        new_row = self.master.account.notifier.tables['orders'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, Type='Sell', BuyLevel=self.buy_level, Price=price, Amount=amount, Cost=round(self.acc), Commission=comision, Order_id=self.order_id)
+        new_row = self.master.account.notifier.tables['orders'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, Type='Sell', BuyLevel=self.buy_level, Price=price, Amount=amount, Cost=round(self.acc), Commission=comision)
         sql_session.add(new_row)
         new_row = self.master.account.notifier.tables['transactions'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, BuyLevel=self.buy_level, Cost=round(self.acc), Profit=profit*100, ProfitUsd=float(usd_profit), Commission=self.commission, Duration=str(self.duration))
         sql_session.add(new_row)
@@ -252,11 +298,9 @@ class Symbol_long(object):
             sql_session.commit()
         except exc.OperationalError as e:
             print(f"Error de conexión a la base de datos: {e}")
+            self.master.account.notifier.send_error(self.name, f"Error de conexión a la base de datos: {e}")
             sql_session.rollback()
-        
-        # print('#TRANSACTION_CLOSED ' + str(self.name) + '\n' + 'Close Price: ' + str(price) + '\n' + 'Duration: ' + str(self.duration) + '\n' + 'Buy Level: ' + str(self.buy_level) + '\n' + 'Cost: ' + str(round(self.acc,2)) + '$ \n' + 'Profit: ' + str(round(profit*100, 2)) + '% \n' + 'Profit USD: ' + str(round(usd_profit,4)) + ' $\n' + 'Commision: ' + str(round(float(self.commission), 5)) + '\n' + 'USDT balance: ' + str(round(self.master.account.balances[self.master.account.base_coin], 2)))
-        
-        self.buy_amount = 0
+                
         self.open_amount_list = np.array([])
         self.open_price_list = []
         self.open_asset_amount_list = np.array([])
@@ -266,21 +310,19 @@ class Symbol_long(object):
         self.duration = '0'
         self.close_point = 1000000000
         self.live_profit = 0
+        self.average_price = 0
         self.commission = 0
-        self.order_id = self.order_id + 1
         
         self.master.wr_list[self.nick][self.side] = self.acc/self.master.account.indiv_max_leverage_funds*100
-        self.master.calculate_ratios(time)
-
-        # new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Asset=self.asset, Long_ratio=self.master.wr_list[self.nick]['Long'], Short_ratio=self.master.wr_list[self.nick]['Short'])
-        # sql_session.add(new_row)
-        # sql_session.commit()
+        new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Name=self.name, Long_ratio=self.master.wr_list[self.nick]['Long'], Short_ratio=self.master.wr_list[self.nick]['Short'])
+        sql_session.add(new_row)
+        sql_session.commit()
         
         self.status = False
         self.can_open = True
         self.can_average = False
         self.can_close = False
-        self.sell_trail_point = 0
+        self.can_close_trail = False
         
         return
 
@@ -289,12 +331,16 @@ class Symbol_long(object):
         if self.status:
             self.live_profit = (price/self.average_price - 1)
             self.duration = time - self.open_time
+
+        if len(self.open_order_id) != 0:
+            open_order = self.master.account.client.get_margin_order(symbol=self.open_order_id['symbol'], orderId=self.open_order_id['orderId'])
+            if open_order['status'] == 'FILLED':
+                self.master.account.check_filled_order(self)
+
+        if self.can_open_trail:
+            self.open_trailing(time, price)
             
         if self.can_open and self.switch:
-            self.can_open_trail = True
-            self.can_open = False
-            self.base_buy_trail_list = []
-            # self.master.account.notifier.start_trailing(price, self, price*(1 + self.buy_trail/100), 'OPEN')
             if self.master.wr_list[self.nick]['Short'] >= self.level:
                 self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64') * self.pond
                 self.master.account.notifier.register_output('Info', self.name, self.side, 'Operation ponderated: ' + str(self.pond))
@@ -302,42 +348,70 @@ class Symbol_long(object):
                 self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64')
                 self.master.account.notifier.register_output('Info', self.name, self.side, 'Operation no ponderated')
 
-        if self.can_open_trail:
-            self.open_trailing(time, price)
-
-        if price < self.average_point and self.can_average:
-            
-            total_drop = (1 - price/self.open_price) * 100
-            if total_drop <= self.drop_limit*self.drop:
-                buy_level = round(total_drop / self.drop, 1)
+            self.base_open_trail = price
+            self.open_trail_point = self.base_open_trail*(1 + self.buy_trail/100)
+            self.open_point = price
+            buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
+            check = self.master.account.create_buy_order(self, buy_amount/self.open_trail_point, self.open_trail_point, 'OPEN')
+            if check:
+                self.can_open_trail = True
+                self.can_open = False
+                self.master.account.notifier.send_order_placed('OPEN', self, self.open_trail_point, buy_amount/self.open_trail_point)
             else:
-                buy_level = round(((total_drop - self.drop_limit*self.drop) / (self.drop + self.drop_param) + self.drop_limit), 1)
-            buy_amount = np.interp(buy_level, self.interp_range, self.buy_distribution) - self.acc    
-            
-            if self.master.account.funds - buy_amount < -self.master.account.max_leverage_funds or self.master.account.long_acc + buy_amount > self.master.account.max_leverage_funds:
-                print('insufficient funds to long average', buy_amount, self.master.account.funds, self.master.account.long_acc, self.master.account.max_leverage_funds)
-            else:
-                self.can_average_trail = True
-                self.can_average = False
-                self.base_buy_trail_list = []
-                self.can_close_trail = False
-                self.can_close = True
-                # self.master.account.notifier.start_trailing(price, self, price*(1 + self.buy_trail/100), 'AVERAGING')
-
+                self.can_open_trail = False
+                self.can_open = True
+                
         if self.can_average_trail:
             self.average_trailing(time, price)
-    
-        if price > self.close_point and self.can_close:
-            self.can_close_trail = True
-            self.can_close = False
-            self.base_sell_trail_list = []
-            self.can_average_trail = False
-            self.can_average = True
-            # self.master.account.notifier.start_trailing(price, self, price*(1 - self.sell_trail/100), 'CLOSE')
             
+        if price < self.average_point and self.can_average:
+
+            self.base_average_trail = price
+            self.average_trail_point = self.base_average_trail*(1 + self.buy_trail/100)
+            buy_amount = self.calculate_interp()              
+            check = self.master.account.create_buy_order(self, buy_amount/self.average_trail_point, self.average_trail_point, 'AVERAGE')
+            if check:
+                self.can_average_trail = True
+                self.can_average = False
+                self.can_close_trail = False
+                self.can_close = True
+                self.master.account.notifier.send_order_placed('AVERAGE', self, self.average_trail_point, buy_amount/self.average_trail_point)
+            else:
+                self.can_average_trail = False
+                self.can_average = True
+                self.can_close_trail = False
+                self.can_close = True
+
         if self.can_close_trail:
             self.close_trailing(time, price)
             
+        if price > self.close_point and self.can_close:
+            
+            self.base_close_trail = price
+            self.close_trail_point = self.base_close_trail*(1 - self.sell_trail/100)
+            check = self.master.account.create_sell_order(self, self.asset_acc, self.close_trail_point, 'CLOSE')
+            if check:
+                self.can_average_trail = False
+                self.can_average = True
+                self.can_close_trail = True
+                self.can_close = False
+                self.master.account.notifier.send_order_placed('CLOSE', self, self.close_trail_point, self.asset_acc)
+            else:
+                self.can_average_trail = False
+                self.can_average = True
+                self.can_close_trail = False
+                self.can_close = True                            
         return
+    
+    def calculate_interp(self):
+        
+        total_drop = (1 - self.average_trail_point/self.open_price) * 100
+        if total_drop <= self.drop_limit*self.drop:
+            buy_level = round(total_drop / self.drop, 1)
+        else:
+            buy_level = round(((total_drop - self.drop_limit*self.drop) / (self.drop + self.drop_param) + self.drop_limit), 1)
+        buy_amount = np.interp(buy_level, self.interp_range, self.buy_distribution) - self.acc      
+
+        return buy_amount   
     
 __all__ = ['Symbol_long']

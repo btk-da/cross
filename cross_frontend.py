@@ -28,7 +28,6 @@ url = 'https://api.telegram.org/bot6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA
 st.set_page_config(page_title='MARTINGALA', page_icon=':chart_with_upwards_trend:', layout='wide')
 
 
-
 class Frontend():
     
     def __init__(self):
@@ -44,90 +43,136 @@ class Frontend():
             self.symbol_names.append(i + '--S')
             
         self.symbol_names.append('ALL')
+        self.logic_front = 5559
+        self.front_logic = 5558
 
-    def conect_logic(self, new_params):
-        
+    def edit_symbol(self, new_params):
+
         try:
-        
-            # Conectarse con logic
-            logic_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            logic_server.bind(('localhost', 5556))
-            logic_server.listen(1)
-            conexion, direccion = logic_server.accept()
-            
-            data = conexion.recv(1024)
-            texto = data.decode('utf-8')
-            st.warning(str(texto))
-            
-            conexion.close()
-            logic_server.close()
-            time.sleep(5)
-            
-            self.edit_symbol(new_params)
-        
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as logic_server:
+                logic_server.bind(('localhost', self.logic_front))
+                logic_server.listen(1)
+                conexion, direccion = logic_server.accept()
+                data = conexion.recv(1024)
+                texto = data.decode('utf-8')
+                st.warning('Edit Symbol: ' + str(texto))
+                conexion.close()
+
         except OSError:
             st.warning('Server occupied, try again')
-        # except Exception as e:
-        #     st.warning('ERROR: ' + str(e))
+        except Exception as e:
+            st.warning('ERROR: ' + str(e))
+        finally:
+            conexion.close()
+
+        try:
+            time.sleep(5)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as front_logic_socket:
+                front_logic_socket.connect(('localhost', self.front_logic))
+                init_message = 'EDIT SYMBOL'
+                message = init_message.encode('utf-8')
+                front_logic_socket.send(message)
+                st.warning(init_message + ' sent')
+                time.sleep(5)
+                
+                serialized_params = pickle.dumps(new_params)
+                front_logic_socket.send(serialized_params)
+                st.warning(str(new_params) + ' sent')
+
+        except OSError as e:
+            st.warning('Server occupied at return, try again : ' + str(e))
+        except Exception as e:
+            st.warning('ERROR: ' + str(e))
+        finally:
+            front_logic_socket.close()
+            st.warning('Conexion closed')
+
+        return
+
+    def add_symbol(self, new_symbol):
+
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as logic_server:
+                logic_server.bind(('localhost', self.logic_front))
+                logic_server.listen(1)
+                conexion, direccion = logic_server.accept()
+                data = conexion.recv(1024)
+                texto = data.decode('utf-8')
+                st.warning('Add Symbol: ' + str(texto))
+
+        except OSError:
+            st.warning('Server occupied, try again')
+        except Exception as e:
+            st.warning('ERROR: ' + str(e))
+        finally:
+            conexion.close()
+
+            
+        try:    
+            time.sleep(5)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as front_logic_socket:
+                front_logic_socket.connect(('localhost', self.front_logic))
+                init_message = 'ADD SYMBOL'
+                message = init_message.encode('utf-8')
+                front_logic_socket.send(message)
+                st.warning(init_message + ' sent')
+                time.sleep(5)
+
+                serialized_inputs = pickle.dumps(new_symbol)
+                front_logic_socket.send(serialized_inputs)
+                st.warning(str(new_symbol) + ' sent')
+
+        except OSError:
+            st.warning('Server occupied at return, try again')
+        except Exception as e:
+            st.warning('ERROR: ' + str(e))
+        finally:
+            front_logic_socket.close()
+
+        return
+    
+    def switch_symbols(self, switch_params):
+        
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as logic_server:
+                logic_server.bind(('localhost', self.logic_front))
+                logic_server.listen(1)
+                conexion, direccion = logic_server.accept()
+                data = conexion.recv(1024)
+                texto = data.decode('utf-8')
+                st.warning('Switch Symbol: ' + str(texto))
+                conexion.close()
+                    
+        except OSError as e:
+            st.warning('Server occupied, try again' + str(e))
+        except Exception as e:
+            st.warning('ERROR: ' + str(e))
+        finally:
+            conexion.close()
+
+        try:
+            time.sleep(5)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as front_logic_socket:
+                front_logic_socket.connect(('localhost', self.front_logic))
+                init_message = 'SWITCH'
+                message = init_message.encode('utf-8')
+                front_logic_socket.send(message)
+                st.warning(init_message + ' sent')
+                time.sleep(5)
+                
+                serialized_switch = pickle.dumps(switch_params)
+                front_logic_socket.send(serialized_switch)
+                st.warning(str(switch_params) + ' sent')
+                
+        except OSError as e:
+            st.warning('Server occupied at return, try again : ' + str(e))
+        except Exception as e:
+            st.warning('ERROR: ' + str(e))
+        finally:
+            front_logic_socket.close()
+            st.warning('Conection closed')
 
         return 
-    
-    def enviar_params(self, function):
-        
-        front_logic_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        front_logic_socket.connect(('localhost', 5557))
-        
-        if function == 'edit symbol':
-            texto = 'Hey logic, sigue con lo tuyo'
-        elif function == 'switch engine':
-            texto = 'switch engine'
-            
-        mensaje = texto.encode('utf-8')
-        front_logic_socket.send(mensaje)
-        front_logic_socket.close()
-
-        #st.warning("Cambios aplicados")
-
-        return
-    
-    def edit_symbol(self, new_params):
-        
-        with open("master.pickle", "rb") as f:
-            symbol_list = pickle.load(f)
-
-        if new_params[0] == 'ALL' and new_params[1] == 'Switch':
-            
-            if bool(int(new_params[2])) == False:
-                for i in symbol_list:
-                    i.switch = False
-                warn = 'All switches turned off'
-            else:
-                for i in symbol_list:
-                    i.switch = True
-                warn = 'All switches turned on'      
-            
-        else:
-            selected_symbol = next(symbol for symbol in symbol_list if symbol.name == new_params[0])
-            mapeo = {'Drop': 'drop', 'TP': 'profit', 'K': 'k', 'Buy Trail': 'buy_trail', 'Sell Trail': 'sell_trail',
-                     'Switch': 'switch', 'Status': 'status', 'Can Open': 'can_open', 'Can Average': 'can_average', 'Can Close': 'can_close', 
-                     'Can Open Trail': 'can_open_trail', 'Can Average Trail': 'can_average_trail', 'Can Close Trail': 'can_close_trail'}
-            
-            if new_params[1] in mapeo:
-                attribute_name = mapeo[new_params[1]]
-                if attribute_name in ['switch', 'status', 'can_open', 'can_average', 'can_close', 'can_open_trail', 'can_average_trail', 'can_close_trail']:
-                    setattr(selected_symbol, attribute_name, bool(int(new_params[2])))
-                else:
-                    setattr(selected_symbol, attribute_name, new_params[2])
-            warn = 'Changed completed ' + 'Symbol: ' + selected_symbol.name + 'Param: ' + attribute_name + 'New Value: ' + str(new_params[2])
-
-        time.sleep(5)
-        st.write(warn)
-        with open("master.pickle", "wb") as f:
-            pickle.dump(symbol_list, f)
-            
-        self.enviar_params('edit symbol')
-
-        return
     
     def open_tr_page(self):
   
@@ -145,7 +190,7 @@ class Frontend():
         df_otr['Duration'] = df0['Duration']
         df_otr['Date'] = df_otr['Date'].dt.strftime('%d/%m %H:%M:%S')
         df_otr = df_otr.sort_values('Cost', ascending=False)
-        
+
         
         # Crear la tabla de Plotly
         fig = go.Figure(data=[go.Table(
@@ -282,51 +327,37 @@ class Frontend():
             
             df_symbols = pd.read_sql_table('symbols', self.conn)
             
-            points = [list(action_points['AveragePoint']), list(action_points['AveragePrice']), list(action_points['Close_Point']), list(action_points['Buy_trail_point']), list(action_points['Sell_trail_point'])]
+            points = [list(action_points['Open_point']), list(action_points['Open_trail_point']), list(action_points['Average_price']), list(action_points['Average_point']), list(action_points['Average_trail_point']), list(action_points['Close_point']), list(action_points['Close_trail_point'])]
             
             # Agregar líneas horizontales para buy_point, average_price y sell_point
             # try:
             annotations = []
+            if int(df_symbols[df_symbols['Name'] == option]['Can_open'].iloc[0]) == 1 or int(df_symbols[df_symbols['Name'] == option]['Can_open_trail'].iloc[0]) == 1:
+                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[0][0], points[0][0]], mode='lines', line=dict(color='rgba(0, 128, 0, 0.4)', width=2, dash='dash'), name='Open Point'))
+                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[0][0], xanchor='left', yanchor='middle', text='Open Point : ' + str(points[0][0]), showarrow=False, font=dict(color='green')))
+                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[1][0], points[1][0]], mode='lines', line=dict(color='rgba(0, 128, 0, 0.4)', width=2, dash='dash'), name='Open Trail Point'))
+                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[1][0], xanchor='left', yanchor='middle', text='Open Trail Point : ' + str(points[1][0]), showarrow=False, font=dict(color='green')))
+                
             if int(df_symbols[df_symbols['Name'] == option]['Symbol_status'].iloc[0]) == 1:
-                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[0][0], points[0][0]], mode='lines', line=dict(color='rgba(0, 128, 0, 0.4)', width=2, dash='dash'), name='Average Point'))
-                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[0][0], xanchor='left', yanchor='middle', text='Average Point : ' + str(points[0][0]), showarrow=False, font=dict(color='green')))
+                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[2][0], points[2][0]], mode='lines', line=dict(color='rgba(0, 0, 255, 0.3)', width=2, dash='dash'), name='Average Price'))
+                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[2][0], xanchor='left', yanchor='middle', text='Average Price : ' + str(points[2][0]), showarrow=False, font=dict(color='blue')))
 
-                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[1][0], points[1][0]], mode='lines', line=dict(color='rgba(0, 0, 255, 0.3)', width=2, dash='dash'), name='Average Price'))
-                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[1][0], xanchor='left', yanchor='middle', text='Average Price : ' + str(points[1][0]), showarrow=False, font=dict(color='blue')))
+            if int(df_symbols[df_symbols['Name'] == option]['Can_average'].iloc[0]) == 1 or int(df_symbols[df_symbols['Name'] == option]['Can_average_trail'].iloc[0]) == 1:
+                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[3][0], points[3][0]], mode='lines', line=dict(color='rgba(0, 128, 0, 0.4)', width=2, dash='dash'), name='Average Point'))
+                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[3][0], xanchor='left', yanchor='middle', text='Average Point : ' + str(points[3][0]), showarrow=False, font=dict(color='green')))
 
-                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[2][0], points[2][0]], mode='lines', line=dict(color='rgba(255, 0, 0, 0.4)', width=2, dash='dash'), name='Close Point'))
-                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[2][0], xanchor='left', yanchor='middle', text='Close Point : ' + str(points[2][0]), showarrow=False, font=dict(color='red')))
+            if int(df_symbols[df_symbols['Name'] == option]['Can_close'].iloc[0]) == 1 or int(df_symbols[df_symbols['Name'] == option]['Can_close_trail'].iloc[0]) == 1:
+                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[5][0], points[5][0]], mode='lines', line=dict(color='rgba(255, 0, 0, 0.4)', width=2, dash='dash'), name='Close Point'))
+                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[5][0], xanchor='left', yanchor='middle', text='Close Point : ' + str(points[5][0]), showarrow=False, font=dict(color='red')))
             
-            if df_symbols[df_symbols['Name'] == option]['Name'].iloc[0][-1] == 'L' and points[3][0] != 0:
-                if (int(df_symbols[df_symbols['Name'] == option]['Can_open_trail'].iloc[0]) == 1 or int(df_symbols[df_symbols['Name'] == option]['Can_average_trail'].iloc[0]) == 1):
-                    fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[3][0], points[3][0]], mode='lines', line=dict(color='rgba(144, 238, 144, 0.4)', width=2, dash='dash'), name='Buy Trail Point'))
-                    annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[3][0], xanchor='left', yanchor='middle', text='Buy Trail Point : ' + str(points[3][0]), showarrow=False, font=dict(color='green')))
-            elif df_symbols[df_symbols['Name'] == option]['Name'].iloc[0][-1] == 'S' and points[4][0] != 0:
-                if int(df_symbols[df_symbols['Name'] == option]['Can_close_trail'].iloc[0]) == 1:
-                    fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[3][0], points[3][0]], mode='lines', line=dict(color='rgba(144, 238, 144, 0.4)', width=2, dash='dash'), name='Buy Trail Point'))
-                    annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[3][0], xanchor='left', yanchor='middle', text='Buy Trail Point : ' + str(points[3][0]), showarrow=False, font=dict(color='green')))
-
-            # if (int(df_symbols[df_symbols['Name'] == option]['Can_open_trail'].iloc[0]) == 1 or int(df_symbols[df_symbols['Name'] == option]['Can_average_trail'].iloc[0]) == 1):
-                # if (df_symbols[df_symbols['Name'] == option]['Name'].iloc[0][-1] == 'L' and points[3][0] != 0) or (df_symbols[df_symbols['Name'] == option]['Name'].iloc[0][-1] == 'S' and points[4][0] != 0):
-                    # fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[3][0], points[3][0]], mode='lines', line=dict(color='rgba(144, 238, 144, 0.4)', width=2, dash='dash'), name='Buy Trail Point'))
-                    # annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[3][0], xanchor='left', yanchor='middle', text='Buy Trail Point : ' + str(points[3][0]), showarrow=False, font=dict(color='green')))
+            if int(df_symbols[df_symbols['Name'] == option]['Can_average_trail'].iloc[0]) == 1:
+                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[4][0], points[4][0]], mode='lines', line=dict(color='rgba(144, 238, 144, 0.4)', width=2, dash='dash'), name='Average Trail Point'))
+                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[4][0], xanchor='left', yanchor='middle', text='Average Trail Point : ' + str(points[4][0]), showarrow=False, font=dict(color='yellow')))
             
-            # if int(df_symbols[df_symbols['Name'] == option]['Can_close_trail'].iloc[0]) == 1:
-            #     if (df_symbols[df_symbols['Name'] == option]['Name'].iloc[0][-1] == 'L' and points[4][0] != 0) or (df_symbols[df_symbols['Name'] == option]['Name'].iloc[0][-1] == 'S' and points[3][0] != 0):
-            #         fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[4][0], points[4][0]], mode='lines', line=dict(color='rgba(255, 165, 0, 0.4)', width=2, dash='dash'), name='Sell Trail Point'))
-            #         annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[4][0], xanchor='left', yanchor='middle', text='Sell Trail Point : ' + str(points[4][0]), showarrow=False, font=dict(color='orange')))
+            if int(df_symbols[df_symbols['Name'] == option]['Can_close_trail'].iloc[0]) == 1:
+                fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[6][0], points[6][0]], mode='lines', line=dict(color='rgba(255, 165, 0, 0.4)', width=2, dash='dash'), name='Close Trail Point'))
+                annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[6][0], xanchor='left', yanchor='middle', text='Close Trail Point : ' + str(points[6][0]), showarrow=False, font=dict(color='orange')))
             
-            if df_symbols[df_symbols['Name'] == option]['Name'].iloc[0][-1] == 'L' and points[4][0] != 0:
-                if int(df_symbols[df_symbols['Name'] == option]['Can_close_trail'].iloc[0]) == 1:
-                    fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[4][0], points[4][0]], mode='lines', line=dict(color='rgba(255, 165, 0, 0.4)', width=2, dash='dash'), name='Sell Trail Point'))
-                    annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[4][0], xanchor='left', yanchor='middle', text='Sell Trail Point : ' + str(points[4][0]), showarrow=False, font=dict(color='orange')))
-            
-            elif df_symbols[df_symbols['Name'] == option]['Name'].iloc[0][-1] == 'S' and points[3][0] != 0:
-                if (int(df_symbols[df_symbols['Name'] == option]['Can_open_trail'].iloc[0]) == 1 or int(df_symbols[df_symbols['Name'] == option]['Can_average_trail'].iloc[0]) == 1):
-                    fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[4][0], points[4][0]], mode='lines', line=dict(color='rgba(255, 165, 0, 0.4)', width=2, dash='dash'), name='Sell Trail Point'))
-                    annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[4][0], xanchor='left', yanchor='middle', text='Sell Trail Point : ' + str(points[4][0]), showarrow=False, font=dict(color='orange')))
-
-
             fig.update_layout(annotations=annotations)
             st.plotly_chart(fig)
             
@@ -362,21 +393,8 @@ class Frontend():
     
     def symbols_page(self):
         
-        if st.button('START ENGINE'):
-            self.enviar_params('switch engine')
-        
-        symbol_n = st.selectbox("Select Symbol", self.symbol_names)
-        param = st.selectbox("Select Parameter", ['Switch', 'Engine', 'Drop', 'TP', 'K', 'Buy Trail', 'Sell Trail', 
-                                                  'Status', 'Can Open', 'Can Average', 'Can Close', 
-                                                  'Can Open Trail', 'Can Average Trail', 'Can Close Trail'])
-        new_value = st.number_input(str(param))
-        new_params =[symbol_n, param, new_value]
-        
-        with st.form("edit_form"):
-    
-            st.form_submit_button(label="EDIT SYMBOLS", on_click=self.conect_logic, args=(new_params,))
-          
-        
+        # TABLA SYMBOLS
+
         df_symbols = pd.read_sql_table('symbols', self.conn)
         del df_symbols['id']
         
@@ -397,11 +415,44 @@ class Frontend():
             showlegend=False,
             title={'text': 'Symbols'},
             width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
-            height=1500  # Altura de la tabla, puedes ajustarlo según tus necesidades
+            height=200  # Altura de la tabla, puedes ajustarlo según tus necesidades
         )
         
         st.plotly_chart(fig)
         
+        # SWITCH SYMBOLS
+        symbol_side = st.selectbox("Select Symbol", ['All', 'Long', 'Short'])
+        switch_mode = st.selectbox("Select Mode", ['ON', 'OFF'])
+        switch_params = {'side':symbol_side, 'mode':switch_mode}
+        with st.form("switch_form"):
+            st.form_submit_button(label='SWITCH SYMBOLS', on_click=self.switch_symbols, args=(switch_params,))
+        
+        # EDIT SYMBOLS
+        symbol_n = st.selectbox("Select Symbol", self.symbol_names)
+        param = st.selectbox("Select Parameter", ['Switch', 'Engine', 'Drop', 'TP', 'K', 'Buy Trail', 'Sell Trail', 'Drop Param', 'Level', 'Pond',
+                                                  'Status', 'Can Open', 'Can Average', 'Can Close', 'Can Open Trail', 'Can Average Trail', 'Can Close Trail'])
+        new_value = st.number_input(str(param))
+        new_params ={'name': symbol_n, 'attribute': param, 'value': new_value}
+        
+        with st.form("edit_form"):
+            st.form_submit_button(label="EDIT SYMBOL", on_click=self.edit_symbol, args=(new_params,))
+
+        # ADD SYMBOLS
+        drop = st.number_input('drop', value=1)
+        profit = st.number_input('profit', value=0.5)
+        k = st.number_input('k', value=1.2)
+        buy_trail = st.number_input('buy trail', value=0.25)
+        sell_trail = st.number_input('sell trail', value=0.15)
+        drop_param = st.number_input('drop param', value=2.5)
+        level = st.number_input('level', value=1)
+        pond = st.number_input('pond', value=5)
+        asset = st.text_input('asset')
+        inputs = [{'drop': drop, 'profit': profit, 'k': k, 'buy_trail':buy_trail, 'sell_trail':sell_trail, 'drop_param':drop_param, 'level':level, 'pond':pond, 'asset': asset},
+                  {'drop': -drop, 'profit': profit, 'k': k, 'buy_trail':sell_trail, 'sell_trail':buy_trail, 'drop_param':drop_param, 'level':level, 'pond':pond, 'asset': asset}]
+        
+        with st.form("add_form"):
+            st.form_submit_button(label="ADD SYMBOL", on_click=self.add_symbol, args=(inputs,))
+         
         return
         
     def transactions_page(self):

@@ -3,6 +3,7 @@ import numpy as np
 from datetime import datetime
 import math
 from binance.client import Client
+from binance.exceptions import BinanceAPIException
 from bot_database import sql_session
 import traceback
 from sqlalchemy import exc
@@ -95,13 +96,14 @@ class Margin_account():
     def get_balances(self):
         for asset in self.assets:
             self.get_asset_balances(asset, self.amount_precision[asset])
-            self.get_base_balances(asset)
+            self.get_base_balances()
         return
     
     def check_balances(self, time, action):
         
+        self.get_balances()
+
         for asset in self.assets:
-            self.get_balances()
            
             real = self.balances[self.base_coin]
             teor = self.t_balances[self.base_coin]
@@ -117,7 +119,8 @@ class Margin_account():
             sql_session.commit()
         except exc.OperationalError as e:
             self.notifier.send_error('NAV Commit', f"Error de conexión a la base de datos: {e}")
-            sql_session.rollback()       
+            sql_session.rollback() 
+        print('Balances checked')
         return
     
     def calculate_nav(self, time):
@@ -186,6 +189,7 @@ class Margin_account():
     def create_buy_order(self, symbol, buy_amount_0, price, action):
         
         buy_amount = self.check_funds(buy_amount_0*price, 'BUY', price)
+        check = False
         
         if buy_amount > 0:
             order_qty = self.round_decimals_up(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
@@ -195,51 +199,73 @@ class Margin_account():
                 self.get_asset_balances(symbol.asset, self.amount_precision[symbol.asset])
     
                 if self.loans[symbol.asset] > 0:
-                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType='AUTO_REPAY', timeInForce='GTC')
+                    side_effect = 'AUTO_REPAY'
+                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType=side_effect, timeInForce='GTC')
                 else:
-                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType='MARGIN_BUY', timeInForce='GTC')
+                    side_effect = 'MARGIN_BUY'
+                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType=side_effect, timeInForce='GTC')
                 
                 buy_open_order['action'] = action
                 symbol.open_order_id = buy_open_order
     
                 check = True
     
+            except BinanceAPIException as e:
+                if e.code == -3045:
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                elif e.code == -3044:
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                elif e.code == -2010:
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                else:
+                    self.notifier.register_output('Error', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                    self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+
             except Exception as e:
-                self.notifier.register_output('Error', symbol.asset, symbol.side, 'Buy Order Creation Failed: ' + str(e))
-                self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e}")
-                check = False
-        else:
-            check = True
+                self.notifier.register_output('Error', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+
 
         return check
     
     def create_sell_order(self, symbol, buy_amount_0, price, action):
         
         buy_amount = self.check_funds(buy_amount_0*price, 'SELL', price)
+        check = False
         
         if buy_amount > 0:
             order_qty = self.round_decimals_down(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
     
             try:
-                self.get_base_balances(symbol.asset)
+                self.get_base_balances()
                 
                 if self.loans[self.base_coin] > 0:
-                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType='AUTO_REPAY', timeInForce='GTC')
+                    side_effect = 'AUTO_REPAY'
+                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType=side_effect, timeInForce='GTC')
                 else:
-                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType='MARGIN_BUY', timeInForce='GTC')
+                    side_effect = 'MARGIN_BUY'
+                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType=side_effect, timeInForce='GTC')
     
                 sell_open_order['action'] = action
                 symbol.open_order_id = sell_open_order
     
                 check = True
+                
+            except BinanceAPIException as e:
+                if e.code == -3045:
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                elif e.code == -3044:
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                elif e.code == -2010:
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                else:
+                    self.notifier.register_output('Error', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                    self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
 
             except Exception as e:
-                self.notifier.register_output('Error', symbol.asset, symbol.side, 'Sell Order Creation Failed: ' + str(e))
-                self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e}")
-                check = False
-        else:
-            check = False
+                self.notifier.register_output('Error', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
 
         return check
     

@@ -137,7 +137,7 @@ class Symbol_short(object):
         sql_session.commit()
         
         self.master.account.notifier.send_open_order_filled(price, amount, self)
-        self.master.account.check_balances(time, 'Short Open Filled')
+        # self.master.account.check_balances(time, 'Short Open Filled')
 
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
@@ -217,7 +217,7 @@ class Symbol_short(object):
         self.can_average_trail = False
         
         self.master.account.notifier.send_average_order_filled(price, amount, self, last_drop)
-        self.master.account.check_balances(time, 'Short Average Filled')
+        # self.master.account.check_balances(time, 'Short Average Filled')
 
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
@@ -282,7 +282,7 @@ class Symbol_short(object):
         covered = round(((self.last_buy_price/self.open_price - 1) * 100), 2)
 
         self.master.account.notifier.send_transaction_closed_filled(self, profit, usd_profit, self.commission, price, covered)        
-        self.master.account.check_balances(time, 'Short Close Filled')
+        # self.master.account.check_balances(time, 'Short Close Filled')
 
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
@@ -355,7 +355,7 @@ class Symbol_short(object):
                 self.can_open_trail = True
                 self.can_open = False
                 self.master.account.notifier.send_order_placed('OPEN', self, self.open_trail_point, buy_amount/self.open_trail_point)
-                self.master.account.check_balances(time, 'Short Open Placed')
+                # self.master.account.check_balances(time, 'Short Open Placed')
             else:
                 self.can_open_trail = False
                 self.can_open = True
@@ -377,7 +377,7 @@ class Symbol_short(object):
                 self.can_close_trail = False
                 self.can_close = True
                 self.master.account.notifier.send_order_placed('AVERAGE', self, self.average_trail_point, buy_amount/self.average_trail_point)
-                self.master.account.check_balances(time, 'Short Average Placed')
+                # self.master.account.check_balances(time, 'Short Average Placed')
             else:
                 self.can_average_trail = False
                 self.can_average = True
@@ -400,7 +400,7 @@ class Symbol_short(object):
                 self.can_close_trail = True
                 self.can_close = False
                 self.master.account.notifier.send_order_placed('CLOSE', self, self.close_trail_point, self.asset_acc)
-                self.master.account.check_balances(time, 'Short Close Placed')
+                # self.master.account.check_balances(time, 'Short Close Placed')
             else:
                 self.can_average_trail = False
                 self.can_average = True

@@ -128,7 +128,7 @@ class Notifier():
     def send_error(self, symbol, error):
         
         message = ('#ERROR' + '\n' + 
-                   'Account: ISOLATED \n' + 
+                   'Account: CROSS \n' + 
                    'Symbol: ' + str(symbol) + '\n' + 
                    'Error: ' + error)
         try:  

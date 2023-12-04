@@ -110,15 +110,11 @@ class Symbol_combi(object):
             self.account.t_loans[asset] = 0
         
         
-        
         # base_loan = 0
         for i in self.account.assets:
             self.account.get_asset_balances(i, self.account.amount_precision[i])
         self.account.get_base_balances()
-        # base_balance, base_loan = self.account.get_initial_base_balances()
 
-        # self.account.balances[self.account.base_coin] = base_balance
-        # self.account.loans[self.account.base_coin] = base_loan
         self.account.t_balances[self.account.base_coin] = self.account.balances[self.account.base_coin]
         self.account.available_funds = self.account.balances[self.account.base_coin]
         self.account.max_leverage_funds = self.account.available_funds * self.account.max_leverage

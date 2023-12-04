@@ -40,8 +40,8 @@ class Margin_account():
                                 'DOGE':0, 'DOT':2, 'EOS':1, 'LINK':2, 'TRX':1, 'SHIB':0, 'AVAX':2, 'XLM':0, 'UNI':2, 
                                 'ETC':2, 'FIL':2, 'HBAR':0, 'VET':1, 'NEAR':1, 'GRT':0, 'AAVE':3, 'DASH':3, 'MATIC':1, 'USDT':2}
         
-        # self.open_order_list = []
-    
+        return
+        
     def round_decimals_up(self, number, decimals):
         factor = 10 ** decimals
         return math.ceil(number * factor) / factor
@@ -49,21 +49,6 @@ class Margin_account():
     def round_decimals_down(self, number, decimals):
         factor = 10 ** decimals
         return math.floor(number * factor) / factor
-    
-    def get_initial_base_balances(self):
-        
-        try:
-            for item in self.client.get_margin_account()['userAssets']:
-                if item['asset'] == self.base_coin:
-                    base_balance = float(self.round_decimals_down(float(item['free']), 2))
-                    base_loan = float(self.round_decimals_down(float(item['borrowed']) + float(item['interest']), 2))
-            self.t_balances[self.base_coin] = base_balance
-        except Exception as e:
-            print(f"Get initial base balance error: {e}")
-            traceback.print_exc()
-            self.notifier.register_output('Error', 'general', 'general', 'Get initial base balance error: ' + str(e))
-            self.notifier.send_error('General', f"Get initial base balance error: {e}")
-        return base_balance, base_loan
     
     def get_base_balances(self):
         
@@ -94,9 +79,9 @@ class Margin_account():
         return
     
     def get_balances(self):
+        self.get_base_balances()
         for asset in self.assets:
             self.get_asset_balances(asset, self.amount_precision[asset])
-            self.get_base_balances()
         return
     
     def check_balances(self, time, action):
@@ -120,7 +105,6 @@ class Margin_account():
         except exc.OperationalError as e:
             self.notifier.send_error('NAV Commit', f"Error de conexión a la base de datos: {e}")
             sql_session.rollback() 
-        print('Balances checked')
         return
     
     def calculate_nav(self, time):

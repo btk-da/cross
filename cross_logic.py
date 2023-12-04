@@ -269,7 +269,7 @@ if __name__ == '__main__':
                             else:
                                 setattr(selected_symbol, attribute_name, edit_params['value'])
                         
-                        warn = 'Changed completed ' + 'Symbol: ' + selected_symbol.name + 'Param: ' + str(attribute_name) + 'New Value: ' + str(selected_symbol.drop_param)
+                        warn = 'Changed completed ' + 'Symbol: ' + selected_symbol.name + 'Param: ' + str(attribute_name) + 'New Value: ' + str(edit_params['value'])
                         requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
                         
 
@@ -277,7 +277,6 @@ if __name__ == '__main__':
                         for i in master.symbol_list:
                             i.master = master
                             i.trading_points()
-                            requests.post(url, data={'chat_id': '-1001802125737', 'text': attribute_name + str(i.drop_param), 'parse_mode': 'HTML'})
 
                         restart_symbols = delete(master.account.notifier.tables['symbols'])
                         sql_session.execute(restart_symbols)

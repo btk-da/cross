@@ -102,10 +102,10 @@ class Margin_account():
                 if abs(diff_usd) * price > 11:
                     
                     if diff_usd > 0:
-                        self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=diff_usd)
+                        self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=round(diff_usd, self.amount_precision[symbol.asset]))
                         correction = 'BUY ' + str(abs(diff_usd))
                     elif diff_usd < 0:
-                        self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=abs(diff_usd))
+                        self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=abs(round(diff_usd, self.amount_precision[symbol.asset])))
                         correction = 'SELL ' + str(abs(diff_usd))
             else:
                 diff_usd = abs(teor) - loan
@@ -114,10 +114,10 @@ class Margin_account():
                     
                     if diff_usd > 0:
                         self.client.create_margin_loan(asset=symbol.asset, amount=diff_usd)
-                        correction = 'BORROW ' + str(abs(diff_usd))                    
+                        correction = 'BORROW ' + str(abs(round(diff_usd, self.amount_precision[symbol.asset])))                    
                     elif diff_usd < 0:
                         self.client.repay_margin_loan(asset=symbol.asset, amount=abs(diff_usd))
-                        correction = 'REPAY ' + str(abs(diff_usd))                    
+                        correction = 'REPAY ' + str(abs(round(diff_usd, self.amount_precision[symbol.asset])))                    
             
             new_row = self.notifier.tables['balances'](Date=str(time), Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = correction, Action = action)
             sql_session.add(new_row)
@@ -201,16 +201,17 @@ class Margin_account():
         if buy_amount > 0:
             order_qty = self.round_decimals_up(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
+            stop_price = round((order_price*0.999), self.price_precision[symbol.asset])
     
             try:
                 self.get_asset_balances(symbol.asset, self.amount_precision[symbol.asset])
     
                 if self.loans[symbol.asset] > 0:
                     side_effect = 'AUTO_REPAY'
-                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=(order_price*0.999), sideEffectType=side_effect, timeInForce='GTC')
+                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
                 else:
                     side_effect = 'MARGIN_BUY'
-                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=(order_price*0.999), sideEffectType=side_effect, timeInForce='GTC')
+                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
                 
                 buy_open_order['action'] = action
                 symbol.open_order_id = buy_open_order
@@ -245,16 +246,17 @@ class Margin_account():
         if buy_amount > 0:
             order_qty = self.round_decimals_down(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
+            stop_price = round((order_price*1.001), self.price_precision[symbol.asset])
     
             try:
                 self.get_base_balances()
                 
                 if self.loans[self.base_coin] > 0:
                     side_effect = 'AUTO_REPAY'
-                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=(order_price*1.001), sideEffectType=side_effect, timeInForce='GTC')
+                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
                 else:
                     side_effect = 'MARGIN_BUY'
-                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=(order_price*1.001), sideEffectType=side_effect, timeInForce='GTC')
+                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
     
                 sell_open_order['action'] = action
                 symbol.open_order_id = sell_open_order

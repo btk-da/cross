@@ -18,7 +18,7 @@ class Margin_account():
         self.available_funds = 0
         self.max_leverage = 3
         self.max_leverage_funds = self.available_funds * self.max_leverage
-        self.indiv_max_leverage_funds = self.max_leverage_funds/27
+        self.indiv_max_leverage_funds = self.max_leverage_funds/29
         self.initial_amount = 11
         
         self.nav = 0

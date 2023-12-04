@@ -141,10 +141,13 @@ class Symbol_long(object):
         self.can_close = True
         self.can_open_trail = False
         
-        self.master.wr_list[self.nick][self.side] = self.acc/self.master.account.indiv_max_leverage_funds*100
-        new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Name=self.name, Long_ratio=self.master.wr_list[self.nick]['Long'], Short_ratio=self.master.wr_list[self.nick]['Short'])
-        sql_session.add(new_row)
-        sql_session.commit()
+        pond_param = self.acc/self.master.account.indiv_max_leverage_funds*100
+        if pond_param > self.master.wr_list[self.side]:
+            self.master.wr_list[self.side] = pond_param
+            new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Name=self.name, Long_ratio=self.master.wr_list['Long'], Short_ratio=self.master.wr_list['Short'])
+            sql_session.add(new_row)
+            sql_session.commit()
+        # self.master.wr_list[self.nick][self.side] = self.acc/self.master.account.indiv_max_leverage_funds*100
         
         self.master.account.notifier.send_open_order_filled(price, amount, self)
         if comision != 0:
@@ -251,10 +254,14 @@ class Symbol_long(object):
             sql_session.rollback()
             
         self.last_buy_price = price
-        self.master.wr_list[self.nick][self.side] = self.acc/self.master.account.indiv_max_leverage_funds*100
-        new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Name=self.name, Long_ratio=self.master.wr_list[self.nick]['Long'], Short_ratio=self.master.wr_list[self.nick]['Short'])
-        sql_session.add(new_row)
-        sql_session.commit()
+        
+        pond_param = self.acc/self.master.account.indiv_max_leverage_funds*100
+        if pond_param > self.master.wr_list[self.side]:
+            self.master.wr_list[self.side] = pond_param
+            new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Name=self.name, Long_ratio=self.master.wr_list['Long'], Short_ratio=self.master.wr_list['Short'])
+            sql_session.add(new_row)
+            sql_session.commit()   
+        # self.master.wr_list[self.nick][self.side] = self.acc/self.master.account.indiv_max_leverage_funds*100
         
         return
     
@@ -338,10 +345,13 @@ class Symbol_long(object):
         self.average_price = 0
         self.commission = 0
         
-        self.master.wr_list[self.nick][self.side] = self.acc/self.master.account.indiv_max_leverage_funds*100
-        new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Name=self.name, Long_ratio=self.master.wr_list[self.nick]['Long'], Short_ratio=self.master.wr_list[self.nick]['Short'])
-        sql_session.add(new_row)
-        sql_session.commit()
+        pond_param = self.acc/self.master.account.indiv_max_leverage_funds*100
+        if pond_param > self.master.wr_list[self.side]:
+            self.master.wr_list[self.side] = pond_param
+            new_row = self.master.account.notifier.tables['ponderation'](Date=str(time), Name=self.name, Long_ratio=self.master.wr_list['Long'], Short_ratio=self.master.wr_list['Short'])
+            sql_session.add(new_row)
+            sql_session.commit()
+        # self.master.wr_list[self.nick][self.side] = self.acc/self.master.account.indiv_max_leverage_funds*100
         
         self.status = False
         self.can_open = True
@@ -366,10 +376,10 @@ class Symbol_long(object):
             self.open_trailing(time, price)
             
         if self.can_open and self.switch:
-            if self.master.wr_list[self.nick]['Short'] >= self.level:
+            if self.master.wr_list['Short'] >= self.level:
                 self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64') * self.pond
                 self.master.account.notifier.register_output('Info', self.name, self.side, 'Operation ponderated: ' + str(self.pond))
-            elif self.master.wr_list[self.nick]['Short'] < self.level:
+            elif self.master.wr_list['Short'] < self.level:
                 self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64')
                 self.master.account.notifier.register_output('Info', self.name, self.side, 'Operation no ponderated')
 

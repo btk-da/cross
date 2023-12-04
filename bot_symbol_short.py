@@ -86,19 +86,29 @@ class Symbol_short(object):
                     self.master.account.check_filled_order(self)
     
                 elif open_order['status'] == 'NEW':
-                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
-                    self.open_order_id = []
-                    buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
-                    check = self.master.account.create_sell_order(self, buy_amount/self.open_trail_point, self.open_trail_point, 'OPEN')
+                    cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    if cancel['status'] == 'CANCELED':
+                        self.open_order_id = []
+                        buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
+                        check = self.master.account.create_sell_order(self, buy_amount/self.open_trail_point, self.open_trail_point, 'OPEN')
     
                 elif open_order['status'] == 'PARTIALLY FILLED':
-                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
-                    self.open_order_id = []
-                    partial_amount, partial_price = self.master.account.check_partial_order(self)
-                    self.master.account.funds = self.master.account.funds - partial_amount*partial_price
-                    self.master.account.long_acc = self.master.account.long_acc + partial_amount*partial_price
-                    buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
-                    check = self.master.account.create_sell_order(self, (buy_amount/self.open_trail_point - partial_amount), self.open_trail_point, 'OPEN')
+                    cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    if cancel['status'] == 'CANCELED':
+                        self.open_order_id = []
+                        partial_amount, partial_price = self.master.account.check_partial_order(self)
+                        
+                        self.open_amount_list = np.append(self.open_amount_list, [partial_amount*partial_price])
+                        self.acc = np.sum([self.open_amount_list])
+                        self.open_asset_amount_list = np.append(self.open_asset_amount_list, [partial_amount])
+                        self.asset_acc = np.sum([self.open_asset_amount_list])
+                        self.open_price_list = np.append(self.open_price_list, [partial_price])
+                        self.average_price = np.dot(self.open_price_list, self.open_asset_amount_list)/self.asset_acc
+                        self.master.account.funds = self.master.account.funds + partial_amount*partial_price
+                        self.master.account.short_acc = self.master.account.short_acc + partial_amount*partial_price
+                        
+                        buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
+                        check = self.master.account.create_sell_order(self, (buy_amount/self.open_trail_point - partial_amount), self.open_trail_point, 'OPEN')
         else:
             self.can_open_trail = False
             self.can_open = True
@@ -137,7 +147,8 @@ class Symbol_short(object):
         sql_session.commit()
         
         self.master.account.notifier.send_open_order_filled(price, amount, self)
-        # self.master.account.check_balances(time, 'Short Open Filled')
+        if comision != 0:
+            self.master.account.check_balance(self, price, 'OPEN', time)
 
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
@@ -167,20 +178,30 @@ class Symbol_short(object):
                     self.master.account.check_filled_order(self)
     
                 elif open_order['status'] == 'NEW':
-                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
-                    self.open_order_id = []
-                    buy_amount = self.calculate_interp()
-                    check = self.master.account.create_sell_order(self, buy_amount/self.average_trail_point, self.average_trail_point, 'AVERAGE')
-                
-                elif open_order['status'] == 'PARTIALLY FILLED':
-                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
-                    self.open_order_id = []
-                    partial_amount, partial_price = self.master.account.check_partial_order(self)
-                    self.master.account.funds = self.master.account.funds - partial_amount*partial_price
-                    self.master.account.long_acc = self.master.account.long_acc + partial_amount*partial_price
-                    buy_amount = self.calculate_interp()           
-                    check = self.master.account.create_sell_order(self, (buy_amount/self.average_trail_point - partial_amount), self.average_trail_point, 'AVERAGE')
+                    cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    if cancel['status'] == 'CANCELED':
+                        self.open_order_id = []
+                        buy_amount = self.calculate_interp()
+                        check = self.master.account.create_sell_order(self, buy_amount/self.average_trail_point, self.average_trail_point, 'AVERAGE')
                     
+                elif open_order['status'] == 'PARTIALLY FILLED':
+                    cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    if cancel['status'] == 'CANCELED':
+                        self.open_order_id = []
+                        partial_amount, partial_price = self.master.account.check_partial_order(self)
+                        
+                        self.open_amount_list = np.append(self.open_amount_list, [partial_amount*partial_price])
+                        self.acc = np.sum([self.open_amount_list])
+                        self.open_asset_amount_list = np.append(self.open_asset_amount_list, [partial_amount])
+                        self.asset_acc = np.sum([self.open_asset_amount_list])
+                        self.open_price_list = np.append(self.open_price_list, [partial_price])
+                        self.average_price = np.dot(self.open_price_list, self.open_asset_amount_list)/self.asset_acc
+                        self.master.account.funds = self.master.account.funds + partial_amount*partial_price
+                        self.master.account.short_acc = self.master.account.short_acc + partial_amount*partial_price
+                        
+                        buy_amount = self.calculate_interp()           
+                        check = self.master.account.create_sell_order(self, (buy_amount/self.average_trail_point - partial_amount), self.average_trail_point, 'AVERAGE')
+                
         else:
             self.can_average_trail = False
             self.can_average = True
@@ -217,7 +238,7 @@ class Symbol_short(object):
         self.can_average_trail = False
         
         self.master.account.notifier.send_average_order_filled(price, amount, self, last_drop)
-        # self.master.account.check_balances(time, 'Short Average Filled')
+        self.master.account.check_balance(self, price, 'AVERAGE', time)
 
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
@@ -251,17 +272,27 @@ class Symbol_short(object):
                     self.master.account.check_filled_order(self)
     
                 elif open_order['status'] == 'NEW':
-                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
-                    self.open_order_id = []
-                    check = self.master.account.create_buy_order(self, self.asset_acc, self.close_trail_point, 'CLOSE')
+                    cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    if cancel['status'] == 'CANCELED':
+                        self.open_order_id = []
+                        check = self.master.account.create_buy_order(self, self.asset_acc, self.close_trail_point, 'CLOSE')
     
                 elif open_order['status'] == 'PARTIALLY FILLED':
-                    self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
-                    self.open_order_id = []
-                    partial_amount, partial_price = self.master.account.check_partial_order(self)
-                    self.master.account.funds = self.master.account.funds + partial_amount*partial_price
-                    self.master.account.long_acc = self.master.account.long_acc - partial_amount*partial_price
-                    check = self.master.account.create_buy_order(self, self.asset_acc, self.close_trail_point, 'CLOSE')
+                    cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
+                    if cancel['status'] == 'CANCELED':
+                        self.open_order_id = []
+                        partial_amount, partial_price = self.master.account.check_partial_order(self)
+                        
+                        self.open_amount_list = np.append(self.open_amount_list, [-partial_amount*partial_price])
+                        self.acc = np.sum([self.open_amount_list])
+                        self.open_asset_amount_list = np.append(self.open_asset_amount_list, [-partial_amount])
+                        self.asset_acc = np.sum([self.open_asset_amount_list])
+                        self.open_price_list = np.append(self.open_price_list, [partial_price])
+                        self.average_price = np.dot(self.open_price_list, self.open_asset_amount_list)/self.asset_acc
+                        self.master.account.funds = self.master.account.funds - partial_amount*partial_price
+                        self.master.account.short_acc = self.master.account.short_acc - partial_amount*partial_price                  
+                        
+                        check = self.master.account.create_buy_order(self, self.asset_acc, self.close_trail_point, 'CLOSE')
         else:
             self.can_close_trail = False
             self.can_close = True
@@ -282,7 +313,7 @@ class Symbol_short(object):
         covered = round(((self.last_buy_price/self.open_price - 1) * 100), 2)
 
         self.master.account.notifier.send_transaction_closed_filled(self, profit, usd_profit, self.commission, price, covered)        
-        # self.master.account.check_balances(time, 'Short Close Filled')
+        self.master.account.check_balance(self, price, 'CLOSE', time)
 
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
@@ -355,7 +386,6 @@ class Symbol_short(object):
                 self.can_open_trail = True
                 self.can_open = False
                 self.master.account.notifier.send_order_placed('OPEN', self, self.open_trail_point, buy_amount/self.open_trail_point)
-                # self.master.account.check_balances(time, 'Short Open Placed')
             else:
                 self.can_open_trail = False
                 self.can_open = True
@@ -377,7 +407,6 @@ class Symbol_short(object):
                 self.can_close_trail = False
                 self.can_close = True
                 self.master.account.notifier.send_order_placed('AVERAGE', self, self.average_trail_point, buy_amount/self.average_trail_point)
-                # self.master.account.check_balances(time, 'Short Average Placed')
             else:
                 self.can_average_trail = False
                 self.can_average = True
@@ -400,7 +429,6 @@ class Symbol_short(object):
                 self.can_close_trail = True
                 self.can_close = False
                 self.master.account.notifier.send_order_placed('CLOSE', self, self.close_trail_point, self.asset_acc)
-                # self.master.account.check_balances(time, 'Short Close Placed')
             else:
                 self.can_average_trail = False
                 self.can_average = True

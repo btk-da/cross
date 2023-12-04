@@ -6,7 +6,7 @@ sql_engine = create_engine('mysql+pymysql://server0:donoso850@localhost/bot_data
 sql_base = declarative_base()
 session = sessionmaker(bind=sql_engine)
 sql_session = session()
-sql_assets = ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'LTC', 'SOL', 'ATOM', 'BCH', 'DOGE', 'DOT', 'EOS', 'LINK', 'TRX', 'SHIB', 'AVAX', 'XLM', 'UNI', 'ETC', 'FIL', 'HBAR', 'VET', 'NEAR', 'GRT', 'AAVE', 'DASH', 'MATIC']
+sql_assets = ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'LTC', 'SOL', 'ATOM', 'BCH', 'DOGE', 'DOT', 'EOS', 'LINK', 'TRX', 'SHIB', 'AVAX', 'XLM', 'UNI', 'ETC', 'FIL', 'HBAR', 'VET', 'NEAR', 'GRT', 'AAVE', 'DASH', 'MATIC', 'ICP', 'RUNE']
 
 def init_database(assets, backup):
     
@@ -172,6 +172,7 @@ def init_database(assets, backup):
         Asset_balance = Column(Float)
         Asset_t_balance = Column(Float)
         Asset_loan = Column(Float)
+        Correction = Column(String(50))
         Action = Column(String(50))
     tables['balances'] = Table12
     

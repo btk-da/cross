@@ -35,10 +35,12 @@ class Margin_account():
         self.client = Client('HxC4DjBJjOv6lqiDdgnF1c7SW3SYYKnmvRyg1KAW4UY4oa5Ndbz3yAi7Z4TtXky9', 'RwwVEqxVzRmtcxf8sAvMcu6kwz6OxEtxsbcTBDTjgHrsmzqgpCjFcBq0aeW93rEU')
         self.price_precision = {'BTC':2, 'ETH':2, 'BNB':1, 'XRP':4, 'ADA':4, 'LTC':2, 'SOL':2, 'ATOM':3, 'BCH':1, 
                                 'DOGE':5, 'DOT':3, 'EOS':3, 'LINK':3, 'TRX':5, 'SHIB':8, 'AVAX':2, 'XLM':4, 'UNI':3, 
-                                'ETC':2, 'FIL':3, 'HBAR':4, 'VET':5, 'NEAR':3, 'GRT':4, 'AAVE':2, 'DASH':2, 'MATIC':4, 'USDT':2}
+                                'ETC':2, 'FIL':3, 'HBAR':4, 'VET':5, 'NEAR':3, 'GRT':4, 'AAVE':2, 'DASH':2, 'MATIC':4, 
+                                'ICP':3 , 'RUNE':3 ,'USDT':2}
         self.amount_precision = {'BTC':5, 'ETH':4, 'BNB':3, 'XRP':0, 'ADA':1, 'LTC':3, 'SOL':2, 'ATOM':2, 'BCH':3,
                                 'DOGE':0, 'DOT':2, 'EOS':1, 'LINK':2, 'TRX':1, 'SHIB':0, 'AVAX':2, 'XLM':0, 'UNI':2, 
-                                'ETC':2, 'FIL':2, 'HBAR':0, 'VET':1, 'NEAR':1, 'GRT':0, 'AAVE':3, 'DASH':3, 'MATIC':1, 'USDT':2}
+                                'ETC':2, 'FIL':2, 'HBAR':0, 'VET':1, 'NEAR':1, 'GRT':0, 'AAVE':3, 'DASH':3, 'MATIC':1, 
+                                'ICP':2 , 'RUNE':1 ,'USDT':2}
         
         return
         
@@ -84,29 +86,50 @@ class Margin_account():
             self.get_asset_balances(asset, self.amount_precision[asset])
         return
     
-    def check_balances(self, time, action):
+    def check_balance(self, symbol, price, action, time):
         
-        self.get_balances()
-
-        for asset in self.assets:
-           
-            real = self.balances[self.base_coin]
-            teor = self.t_balances[self.base_coin]
-            diff = (abs(teor)/abs(real) - 1)*100
-            diff_usd = teor - real
-            
-            if diff > 5 and abs(diff_usd) > 10:
-                self.notifier.send_error(asset, 'Balances unmached: REAL: ' + str(round(self.balances[asset], self.amount_precision[asset])) + '\n' + 'TEORETHICAL: ' + str(round(self.t_balances[asset], self.amount_precision[asset])) + '\n' + ' DIFF USDT: ' + str(round(diff_usd, 2)))
-        
-            new_row = self.notifier.tables['balances'](Date=str(time), Asset = asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[asset], Asset_t_balance = round(self.t_balances[asset], self.amount_precision[asset]), Asset_loan = self.loans[asset], Action = action)
-            sql_session.add(new_row)
         try:
-            sql_session.commit()
-        except exc.OperationalError as e:
-            self.notifier.send_error('NAV Commit', f"Error de conexión a la base de datos: {e}")
-            sql_session.rollback() 
-        return
+            self.get_asset_balances(symbol.asset, self.amount_precision[symbol.asset])
     
+            real = self.balances[symbol.asset]
+            teor = self.t_balances[symbol.asset]
+            loan = self.loans[symbol.asset]
+            correction = False
+            
+            if teor >= 0:
+                diff_usd = teor - real
+                
+                if abs(diff_usd) * price > 11:
+                    
+                    if diff_usd > 0:
+                        self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=diff_usd)
+                        correction = 'BUY ' + str(abs(diff_usd))
+                    elif diff_usd < 0:
+                        self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=abs(diff_usd))
+                        correction = 'SELL ' + str(abs(diff_usd))
+            else:
+                diff_usd = abs(teor) - loan
+                
+                if abs(diff_usd) * price > 11:
+                    
+                    if diff_usd > 0:
+                        self.client.create_margin_loan(asset=symbol.asset, amount=diff_usd)
+                        correction = 'BORROW ' + str(abs(diff_usd))                    
+                    elif diff_usd < 0:
+                        self.client.repay_margin_loan(asset=symbol.asset, amount=abs(diff_usd))
+                        correction = 'REPAY ' + str(abs(diff_usd))                    
+            
+            new_row = self.notifier.tables['balances'](Date=str(time), Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = correction, Action = action)
+            sql_session.add(new_row)
+            try:
+                sql_session.commit()
+            except exc.OperationalError as e:
+                self.notifier.send_error('Check balance Commit', f"Error de conexión a la base de datos: {e}, Symbol: {symbol.name}")
+                sql_session.rollback()
+        except Exception as e:
+            print(str(e), symbol.asset, action, symbol.name)
+        return
+            
     def calculate_nav(self, time):
         try:
             asset_value = self.balances[self.base_coin]
@@ -184,10 +207,10 @@ class Margin_account():
     
                 if self.loans[symbol.asset] > 0:
                     side_effect = 'AUTO_REPAY'
-                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=(order_price*0.999), sideEffectType=side_effect, timeInForce='GTC')
                 else:
                     side_effect = 'MARGIN_BUY'
-                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=(order_price*0.999), sideEffectType=side_effect, timeInForce='GTC')
                 
                 buy_open_order['action'] = action
                 symbol.open_order_id = buy_open_order
@@ -200,6 +223,8 @@ class Margin_account():
                 elif e.code == -3044:
                     self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
                 elif e.code == -2010:
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                elif e.code == -3007:
                     self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
                 else:
                     self.notifier.register_output('Error', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
@@ -226,10 +251,10 @@ class Margin_account():
                 
                 if self.loans[self.base_coin] > 0:
                     side_effect = 'AUTO_REPAY'
-                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=(order_price*1.001), sideEffectType=side_effect, timeInForce='GTC')
                 else:
                     side_effect = 'MARGIN_BUY'
-                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=(order_price*1.001), sideEffectType=side_effect, timeInForce='GTC')
     
                 sell_open_order['action'] = action
                 symbol.open_order_id = sell_open_order
@@ -243,6 +268,8 @@ class Margin_account():
                     self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
                 elif e.code == -2010:
                     self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                elif e.code == -3007:
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
                 else:
                     self.notifier.register_output('Error', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
                     self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
@@ -279,12 +306,12 @@ class Margin_account():
         
         self.notifier.register_output('Action', symbol.asset, symbol.side, order['action'] + ' Order Partially Filled ' + str(open_order['orderId']))
                 
-        symbol.open_amount_list = np.append(symbol.open_amount_list, [total_amount*average_price])
-        symbol.acc = np.sum([symbol.open_amount_list])
-        symbol.open_asset_amount_list = np.append(symbol.open_asset_amount_list, [total_amount])
-        symbol.asset_acc = np.sum([symbol.open_asset_amount_list])
-        symbol.open_price_list = np.append(symbol.open_price_list, [average_price])
-        symbol.average_price = np.dot(symbol.open_price_list, symbol.open_asset_amount_list)/symbol.asset_acc
+        # symbol.open_amount_list = np.append(symbol.open_amount_list, [total_amount*average_price])
+        # symbol.acc = np.sum([symbol.open_amount_list])
+        # symbol.open_asset_amount_list = np.append(symbol.open_asset_amount_list, [total_amount])
+        # symbol.asset_acc = np.sum([symbol.open_asset_amount_list])
+        # symbol.open_price_list = np.append(symbol.open_price_list, [average_price])
+        # symbol.average_price = np.dot(symbol.open_price_list, symbol.open_asset_amount_list)/symbol.asset_acc
 
         return total_amount, average_price
     

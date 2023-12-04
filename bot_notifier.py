@@ -13,8 +13,8 @@ class Notifier():
         self.tables = {}
         self.token = '6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4'
         
-        self.eqs = {'gorka':10024, 'inaki':14371, 'nacho':1230, 'total':5300}
-        self.parts = {'gorka':36.9, 'inaki':21.2, 'nacho':1.8}
+        self.eqs = {'gorka':15543, 'inaki':14417, 'nacho':1242, 'total':73526}
+        self.parts = {'gorka':41.5, 'inaki':19.6, 'nacho':1.7}
         self.ids = {'gorka':'-1002116297039', 'aita':'-1001517241898', 'inaki':'-1002079190459', 'nacho':'-1002080234130', 'error':'-1002041194998', 'general':'-1001966519898'}
         
     def send_order_placed(self, action, symbol, price, amount):

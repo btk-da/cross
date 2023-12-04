@@ -78,7 +78,11 @@ inputs = [{'drop': 1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0
           {'drop': 1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':2, 'pond':5, 'asset': 'DASH'},
           {'drop': -1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':2, 'pond':5, 'asset': 'DASH'},
           {'drop': 1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':2, 'pond':5, 'asset': 'MATIC'},
-          {'drop': -1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':2, 'pond':5, 'asset': 'MATIC'}]
+          {'drop': -1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':2, 'pond':5, 'asset': 'MATIC'},
+          {'drop': 1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':2, 'pond':5, 'asset': 'ICP'},
+          {'drop': -1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':2, 'pond':5, 'asset': 'ICP'},
+          {'drop': 1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':2, 'pond':5, 'asset': 'RUNE'},
+          {'drop': -1, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':2, 'pond':5, 'asset': 'RUNE'}]
 
 
 backup = False

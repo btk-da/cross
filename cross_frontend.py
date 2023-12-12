@@ -508,7 +508,7 @@ class Frontend():
         }
         
         now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second) - timedelta(minutes=3)
-        period = (now - datetime(2023, 11, 27, 18, 0, 0)).total_seconds()/86400
+        period = (now - datetime(2023, 12, 4, 21, 0, 0)).total_seconds()/86400
         #ACTUALIZAR AL INICIO
         
         df_aggregated = df_tr1.groupby('Name').agg(aggregation_functions).reset_index()
@@ -534,7 +534,7 @@ class Frontend():
         df_aggregated0 = df_tr0.groupby('Name').agg(aggregation_functions).reset_index()
         df_aggregated['Max Acc ($)'] = df_aggregated0['Cost']
     
-        grouped = {'Name':'TOTAL', 'Rent Anual':round(((1 + sum(df_tr['ProfitUsd'])/67500) ** (1/(period/365)) - 1) * 100, 2),
+        grouped = {'Name':'TOTAL', 'Rent Anual':round(((1 + sum(df_tr['ProfitUsd'])/72500) ** (1/(period/365)) - 1) * 100, 2),
                    'Num Ops':len(df_tr['ProfitUsd']), 'Profit (Total $)':round(sum(df_tr['ProfitUsd']),2),
                    'Duration (Average Hours)':np.around(np.mean(df_tr['Duration']),2), 'Profit (Average %)':np.around(np.mean(df_tr['Profit']),2),
                    'Cost (Average $)':np.around(np.mean(df_tr['Cost']),2), 'Buy Level (Average)':np.around(np.mean(df_tr['BuyLevel']),1),

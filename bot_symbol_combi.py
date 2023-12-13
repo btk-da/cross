@@ -15,7 +15,7 @@ class Symbol_combi(object):
         self.symbol_list = []
         self.account = []
         self.engine_working = True
-        self.wr_list = {'Long':0, 'Short':0}
+        self.wr_list = {'GENERAL': {'Long':0, 'Short':0}}
         
     def add_symbols(self, symbols):
         
@@ -26,7 +26,7 @@ class Symbol_combi(object):
                 symbol = Symbol_long(params, self)
             elif params['drop'] < 0:
                 symbol = Symbol_short(params, self)
-                # self.wr_list[symbol.nick] = {'Long':0, 'Short':0}
+                self.wr_list[symbol.nick] = {'Long':0, 'Short':0}
 
             try:
                 symbol.price = float(self.account.client.get_symbol_ticker(symbol=symbol.tic)['price'])
@@ -118,7 +118,6 @@ class Symbol_combi(object):
         self.account.t_balances[self.account.base_coin] = self.account.balances[self.account.base_coin]
         self.account.available_funds = self.account.balances[self.account.base_coin]
         self.account.max_leverage_funds = self.account.available_funds * self.account.max_leverage
-        self.account.indiv_max_leverage_funds = self.account.max_leverage_funds/29
         time = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second)
         print('Base balance: ', self.account.balances[self.account.base_coin])
         self.account.notifier.register_output('Info', 'general', 'general', 'Base balance: ' + str(self.account.balances[self.account.base_coin]))

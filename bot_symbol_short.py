@@ -8,7 +8,7 @@ class Symbol_short(object):
     def __init__(self, params, master) -> None:
         
         self.master = master
-        # self.params = params
+        self.params = params
         self.drop = -params['drop']   
         self.profit = params['profit'] 
         self.k = params['k']

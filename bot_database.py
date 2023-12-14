@@ -1,4 +1,5 @@
 
+import requests
 from sqlalchemy import create_engine, Column, Float, Integer, String
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -177,8 +178,12 @@ def init_database(assets, backup):
     
     if backup == True:
         print('database charged')
+        requests.post('https://api.telegram.org/bot' + '6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4' + '/sendMessage', data={'chat_id': '-1002023987289', 'text': 'Backup charged', 'parse_mode': 'HTML'})
+
     else:
         sql_base.metadata.drop_all(sql_engine)
         sql_base.metadata.create_all(sql_engine)
-        print('database files initialized')
+        print('Database files initialized')
+        requests.post('https://api.telegram.org/bot' + '6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4' + '/sendMessage', data={'chat_id': '-1002023987289', 'text': 'Database initialized', 'parse_mode': 'HTML'})
+
     return tables

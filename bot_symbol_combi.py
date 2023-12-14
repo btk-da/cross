@@ -27,7 +27,6 @@ class Symbol_combi(object):
             elif params['drop'] < 0:
                 symbol = Symbol_short(params, self)
                 self.wr_list[symbol.nick] = {'Long':0, 'Short':0}
-            print(symbol.master)
 
             try:
                 symbol.price = float(self.account.client.get_symbol_ticker(symbol=symbol.tic)['price'])
@@ -53,10 +52,9 @@ class Symbol_combi(object):
         for params in inputs:
             if params['drop'] > 0:
                 symbol = Symbol_long(params, self)
-                # self.wr_list[symbol.nick] = {'Long':0, 'Short':0}
             elif params['drop'] < 0:
                 symbol = Symbol_short(params, self)
-                # self.wr_list[symbol.nick] = {'Long':0, 'Short':0}
+                self.wr_list[symbol.nick] = {'Long':0, 'Short':0}
 
             try:
                 symbol.price = float(self.account.client.get_symbol_ticker(symbol=symbol.tic)['price'])
@@ -174,6 +172,9 @@ class Symbol_combi(object):
             sql_session.add(new_row)
             
             symbol.logic(time, price)
+            
+            self.account.notifier.register_output('Update', symbol.asset, symbol.name, 'Symbols Updated')
+
             
             new_row = self.account.notifier.tables['open_tr'](Date=str(time), Name=symbol.name, BuyLevel=symbol.buy_level, Amount=round(symbol.asset_acc, 4), Cost=round(symbol.acc), Profit=round(symbol.live_profit*100,2), ProfitUsd=round(symbol.live_profit*symbol.acc,2), Duration=symbol.duration)
             sql_session.add(new_row)

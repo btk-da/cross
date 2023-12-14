@@ -25,9 +25,6 @@ from sqlalchemy.exc import OperationalError
 
 url = 'https://api.telegram.org/bot6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4/sendMessage'
 
-inputs = [{'drop': 0.5, 'profit': 0.3, 'k': 1.33, 'buy_trail':0.1, 'sell_trail':0.1, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'IMX'},
-          {'drop': -0.5, 'profit': 0.3, 'k': 1.33, 'buy_trail':0.1, 'sell_trail':0.1, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'IMX'}]
-"""
 inputs = [{'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
           {'drop': -1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
           {'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'ETH'},
@@ -88,13 +85,14 @@ inputs = [{'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail'
           {'drop': -1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'RUNE'},
           {'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'IMX'},
           {'drop': -1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'IMX'}]
-"""
+
+
 assets = []
 for i in inputs:
     assets.append(i['asset'])
 assets = set(assets)
 
-backup = True
+backup = False
 
 if __name__ == '__main__':
     
@@ -138,8 +136,16 @@ if __name__ == '__main__':
         master.account = account
         sql_tables = init_database(assets, True)
         master.account.notifier.tables = sql_tables
+        
         with open("symbols.pickle", "rb") as f:
             symbols_backup = pickle.load(f)
+        
+        inputs = []
+        for i in symbols_backup.keys():
+            inputs.append(symbols_backup[i]['params'])
+            
+        master.add_symbols(inputs)
+        master.init_params(True)
             
         for name, data in symbols_backup.items():
             for symbol_instance in master.symbol_list:
@@ -147,7 +153,9 @@ if __name__ == '__main__':
                     for attr, value in data.items():
                         setattr(symbol_instance, attr, value)   
                     symbol_instance.master = master
-        master.init_params(True)  
+                    master.account.notifier.register_output('Info', 'general', 'general', symbol_instance.name + 'charged')        
+        
+        master.account.notifier.register_output('Info', 'general', 'general', 'Backup Charged')
         print('Backup charged')
         
     else:
@@ -157,7 +165,8 @@ if __name__ == '__main__':
         sql_tables = init_database(assets, False)
         master.account.notifier.tables = sql_tables
         master.add_symbols(inputs)
-        master.init_params(False)    
+        master.init_params(False)  
+        master.account.notifier.register_output('Info', 'general', 'general', 'System initialized')
         print('System initialized')
     
     print('Start Operating')

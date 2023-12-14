@@ -220,6 +220,8 @@ class Margin_account():
             order_qty = self.round_decimals_up(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
             stop_price = round((order_price*0.999), self.price_precision[symbol.asset])
+            self.notifier.send_error(symbol.name, f"Buy Order Creation;  qty: {order_qty};  price: {order_price}; Price: {price}; Stop price: {stop_price}")
+
     
             try:
                 self.get_asset_balances(symbol.asset, self.amount_precision[symbol.asset])
@@ -265,6 +267,7 @@ class Margin_account():
             order_qty = self.round_decimals_down(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
             stop_price = round((order_price*1.001), self.price_precision[symbol.asset])
+            self.notifier.send_error(symbol.name, f"Buy Order Creation;  qty: {order_qty};  price: {order_price}; Price: {price}; Stop price: {stop_price}")
     
             try:
                 self.get_base_balances()

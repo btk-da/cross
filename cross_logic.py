@@ -18,13 +18,18 @@ from bot_symbol_long import Symbol_long
 from bot_symbol_short import Symbol_short
 from bot_notifier import Notifier
 from bot_account import Margin_account
-from bot_database import init_database, sql_assets, sql_session
+from bot_database import init_database, sql_session
 from sqlalchemy import delete
 from sqlalchemy.exc import OperationalError
 
 
 url = 'https://api.telegram.org/bot6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4/sendMessage'
 
+inputs = [{'drop': 0.2, 'profit': 0.2, 'k': 1.33, 'buy_trail':0.05, 'sell_trail':0.05, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
+          {'drop': -0.2, 'profit': 0.2, 'k': 1.33, 'buy_trail':0.05, 'sell_trail':0.05, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
+          {'drop': 0.3, 'profit': 0.2, 'k': 1.33, 'buy_trail':0.05, 'sell_trail':0.05, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'ETH'},
+          {'drop': -0.3, 'profit': 0.2, 'k': 1.33, 'buy_trail':0.05, 'sell_trail':0.05, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'ETH'}]
+"""
 inputs = [{'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
           {'drop': -1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
           {'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'ETH'},
@@ -85,72 +90,105 @@ inputs = [{'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail'
           {'drop': -1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'RUNE'},
           {'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'IMX'},
           {'drop': -1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'IMX'}]
-
+"""
+assets = []
+for i in inputs:
+    assets.append(i['asset'])
+assets = set(assets)
 
 backup = False
 
 if __name__ == '__main__':
     
-    if backup:
+    # if backup:
         
-        sql_tables = init_database(sql_assets, True)
-        account = Margin_account(Notifier())
-        account.notifier.tables = sql_tables
+    #     sql_tables = init_database(sql_assets, True)
+    #     account = Margin_account(Notifier())
+    #     account.notifier.tables = sql_tables
         
-        master = Symbol_combi()
-        master.account = account
+    #     master = Symbol_combi()
+    #     master.account = account
         
-        with open("master.pickle", "rb") as f:
-            master_back = pickle.load(f)
+    #     with open("master.pickle", "rb") as f:
+    #         master_back = pickle.load(f)
         
-        master.symbol_list = master_back
-        for i in master.symbol_list:
-            i.master = master
+    #     master.symbol_list = master_back
+    #     for i in master.symbol_list:
+    #         i.master = master
 
+    #     master.init_params(True)  
+    #     print('Backup charged')
+        
+    # else:
+    
+    #     sql_tables = init_database(sql_assets, False)
+    #     account = Margin_account(Notifier())
+    #     account.notifier.tables = sql_tables
+        
+    #     master = Symbol_combi()
+    #     master.account = account
+    #     master.add_symbols(inputs)
+    #     master.init_params(False)    
+    #     print('System initialized')
+    
+    # print('Start Operating')
+    
+    account = Margin_account(Notifier())
+    master = Symbol_combi()
+    master.account = account
+
+    
+    if backup:
+        sql_tables = init_database(assets, True)
+        master.account.notifier.tables = sql_tables
+        with open("symbols.pickle", "rb") as f:
+            symbols_backup = pickle.load(f)
+            
+        for name, data in symbols_backup.items():
+            for symbol_instance in master.symbol_list:
+                if symbol_instance.name == name:
+                    for attr, value in data.items():
+                        setattr(symbol_instance, attr, value)        
         master.init_params(True)  
         print('Backup charged')
         
     else:
-    
-        sql_tables = init_database(sql_assets, False)
-        account = Margin_account(Notifier())
-        account.notifier.tables = sql_tables
-        
-        master = Symbol_combi()
-        master.account = account
+        sql_tables = init_database(assets, False)
+        master.account.notifier.tables = sql_tables
         master.add_symbols(inputs)
         master.init_params(False)    
         print('System initialized')
     
+
     print('Start Operating')
+    
     
     while True:
         
         if master.engine_working == True:
-            
+        
             try:
                 master.update_open_tr()
-                backup_list = copy.deepcopy(master.symbol_list)
                 
-                for i in backup_list:
-                    i.master = []
-                with open("master.pickle", "wb") as f:
-                    pickle.dump(backup_list, f)
+                symbols_backup = {}
+                for symbol in master.symbol_list:
+                    symbols_backup[symbol.name] = symbol.__dict__
+                with open("symbols.pickle", "wb") as f:
+                    pickle.dump(symbols_backup, f)
+                
+                # backup_list = copy.deepcopy(master.symbol_list)
+                # for i in backup_list:
+                #     i.master = []
+                # with open("master.pickle", "wb") as f:
+                #     pickle.dump(backup_list, f)
                     
             except BinanceAPIException as e:
-                print(f"Se produjo un error de la API de Binance: {e}")
-                master.account.notifier.register_output('Error', 'general', 'general', 'Binance API error ' + str(e))
                 master.account.notifier.send_error('General', 'Binance API error ' + str(e))
             except requests.exceptions.ReadTimeout as e:
-                print(f"Error de tiempo de espera en la API de Binance: {e}")
-                master.account.notifier.register_output('Error', 'general', 'general', 'Binance API error ' + str(e))
-                master.account.notifier.send_error('General', 'Binance API error ' + str(e))
+                master.account.notifier.send_error('General', f"Error de tiempo de espera en la API de Binance: {e}")
             except OperationalError as e:
-                # Captura el error específico de SQLAlchemy
-                print(f"Error de conexión a la base de datos: {e}")
                 master.account.notifier.send_error('General', f"Error de conexión a la base de datos: {e}")
             except Exception as e:
-                print(f"ERROR NO IDENTIFICADO: {e}")
                 master.account.notifier.send_error('General', f"ERROR NO IDENTIFICADO: {e}")
             time.sleep(30)
             
@@ -200,12 +238,20 @@ if __name__ == '__main__':
                         switch_params = pickle.loads(switch_data)
                         requests.post(url, data={'chat_id': '-1001802125737', 'text': 'Side: ' + switch_params['side'] + ' Mode: ' + switch_params['mode'], 'parse_mode': 'HTML'})
                         
-                        with open("master.pickle", "rb") as f:
-                            master_back = pickle.load(f)
+                        with open("symbols.pickle", "rb") as f:
+                            symbols_backup = pickle.load(f)
                             
-                        master.symbol_list = master_back
-                        for i in master.symbol_list:
-                            i.master = master
+                        for name, data in symbols_backup.items():
+                            for symbol_instance in master.symbol_list:
+                                if symbol_instance.name == name:
+                                    for attr, value in data.items():
+                                        setattr(symbol_instance, attr, value)
+                                    
+                        # with open("master.pickle", "rb") as f:
+                        #     master_back = pickle.load(f)
+                        # master.symbol_list = master_back
+                        # for i in master.symbol_list:
+                        #     i.master = master
                             
                         if switch_params['side'] == 'All':
                             if switch_params['mode'] == 'OFF':
@@ -259,11 +305,20 @@ if __name__ == '__main__':
                         edit_params = pickle.loads(edit_symbol_data)
                         requests.post(url, data={'chat_id': '-1001802125737', 'text': 'Name: ' + edit_params['name'] + ' Attribute: ' + edit_params['attribute'] + ' Value: ' + str(edit_params['value']), 'parse_mode': 'HTML'})
                         
+                        with open("symbols.pickle", "rb") as f:
+                            symbols_backup = pickle.load(f)
+                            
+                        for name, data in symbols_backup.items():
+                            for symbol_instance in master.symbol_list:
+                                if symbol_instance.name == name:
+                                    for attr, value in data.items():
+                                        setattr(symbol_instance, attr, value)
                         
-                        with open("master.pickle", "rb") as f:
-                            symbol_list = pickle.load(f)
                         
-                        selected_symbol = next(symbol for symbol in symbol_list if symbol.name == edit_params['name'])
+                        # with open("master.pickle", "rb") as f:
+                        #     symbol_list = pickle.load(f)
+                        
+                        selected_symbol = next(symbol for symbol in master.symbol_list if symbol.name == edit_params['name'])
                         mapeo = {'Drop': 'drop', 'TP': 'profit', 'K': 'k', 'Buy Trail': 'buy_trail', 'Sell Trail': 'sell_trail', 'Drop Param':'drop_param', 'Level': 'level', 'Pond': 'pond',
                                     'Switch': 'switch', 'Status': 'status', 'Can Open': 'can_open', 'Can Average': 'can_average', 'Can Close': 'can_close', 
                                     'Can Open Trail': 'can_open_trail', 'Can Average Trail': 'can_average_trail', 'Can Close Trail': 'can_close_trail'}
@@ -277,16 +332,11 @@ if __name__ == '__main__':
                         
                         warn = 'Changed completed ' + 'Symbol: ' + selected_symbol.name + 'Param: ' + str(attribute_name) + 'New Value: ' + str(edit_params['value'])
                         requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
-                        
-
-                        master.symbol_list = symbol_list                           
-                        for i in master.symbol_list:
-                            i.master = master
-                            i.trading_points()
 
                         restart_symbols = delete(master.account.notifier.tables['symbols'])
                         sql_session.execute(restart_symbols)
                         for symbol in master.symbol_list:
+                            symbol.trading_points()
                             new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Drop_param=symbol.drop_param, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
                             sql_session.add(new_row)
                         sql_session.commit()                    
@@ -300,12 +350,20 @@ if __name__ == '__main__':
                         add_symbol_params = pickle.loads(add_symbol_data)
                         requests.post(url, data={'chat_id': '-1001802125737', 'text': 'Drop: ' + str(add_symbol_params[0]['drop']) + ' Profit: ' + str(add_symbol_params[0]['profit']) + ' K: ' + str(add_symbol_params[0]['k']), 'parse_mode': 'HTML'})
                         
-                        with open("master.pickle", "rb") as f:
-                            master_back = pickle.load(f)
+                        with open("symbols.pickle", "rb") as f:
+                            symbols_backup = pickle.load(f)
                             
-                        master.symbol_list = master_back
-                        for i in master.symbol_list:
-                            i.master = master
+                        for name, data in symbols_backup.items():
+                            for symbol_instance in master.symbol_list:
+                                if symbol_instance.name == name:
+                                    for attr, value in data.items():
+                                        setattr(symbol_instance, attr, value)
+                                        
+                        # with open("master.pickle", "rb") as f:
+                        #     master_back = pickle.load(f)
+                        # master.symbol_list = master_back
+                        # for i in master.symbol_list:
+                        #     i.master = master
                         
                         master.add_new_symbol(add_symbol_params)
     

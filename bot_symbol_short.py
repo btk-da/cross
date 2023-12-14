@@ -8,7 +8,7 @@ class Symbol_short(object):
     def __init__(self, params, master) -> None:
         
         self.master = master
-        self.params = params
+        # self.params = params
         self.drop = -params['drop']   
         self.profit = params['profit'] 
         self.k = params['k']
@@ -205,8 +205,7 @@ class Symbol_short(object):
                         self.master.account.short_acc = self.master.account.short_acc + partial_amount*partial_price
                         
                         buy_amount = self.calculate_interp()           
-                        check = self.master.account.create_sell_order(self, (buy_amount/self.average_trail_point - partial_amount), self.average_trail_point, 'AVERAGE')
-                
+                        check = self.master.account.create_sell_order(self, (buy_amount/self.average_trail_point - partial_amount), self.average_trail_point, 'AVERAGE')        
         else:
             self.can_average_trail = False
             self.can_average = True
@@ -302,7 +301,6 @@ class Symbol_short(object):
                         self.average_price = np.dot(self.open_price_list, self.open_asset_amount_list)/self.asset_acc
                         self.master.account.funds = self.master.account.funds - partial_amount*partial_price
                         self.master.account.short_acc = self.master.account.short_acc - partial_amount*partial_price                  
-                        
                         check = self.master.account.create_buy_order(self, self.asset_acc, self.close_trail_point, 'CLOSE')
         else:
             self.can_close_trail = False
@@ -406,6 +404,8 @@ class Symbol_short(object):
             else:
                 self.can_open_trail = False
                 self.can_open = True
+                self.master.account.notifier.send_error(self.name, f"Check negativo short open order")
+
         
         if self.can_average_trail:
             self.average_trailing(time, price)
@@ -429,6 +429,8 @@ class Symbol_short(object):
                 self.can_average = True
                 self.can_close_trail = False
                 self.can_close = True
+                self.master.account.notifier.send_error(self.name, f"Check negativo short average order")
+
 
         if self.can_close_trail:
             self.close_trailing(time, price)
@@ -450,8 +452,9 @@ class Symbol_short(object):
                 self.can_average_trail = False
                 self.can_average = True
                 self.can_close_trail = False
-                self.can_close = True                
-            
+                self.can_close = True             
+                self.master.account.notifier.send_error(self.name, f"Check negativo short close order")
+
         return
     
     def calculate_interp(self):

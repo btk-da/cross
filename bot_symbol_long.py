@@ -1,7 +1,5 @@
 
 import numpy as np
-import copy
-import pickle
 from bot_database import sql_session
 from sqlalchemy import exc
 
@@ -10,7 +8,7 @@ class Symbol_long(object):
     def __init__(self, params, master) -> None:
         
         self.master = master
-        self.params = params
+        # self.params = params
         self.drop = params['drop']
         self.profit = params['profit']
         self.k = params['k']
@@ -20,7 +18,7 @@ class Symbol_long(object):
         self.level = params['level']
         self.pond = params['pond']   
         self.asset = params['asset']
-        # self.tic = self.asset + self.master.account.base_coin
+        self.tic = self.asset + self.master.account.base_coin
         self.name = self.asset + '--L'
         self.side = 'Long'
         self.nick = str(abs(self.drop)) + str(self.profit) + str(self.k) + self.asset
@@ -58,53 +56,16 @@ class Symbol_long(object):
         self.average_trail_point = 0
         self.close_trail_point = 0
         
-        # self.interp_range = np.array(np.arange(0,50),dtype='float64')
-        # self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64')
-        # self.drop_limit = 17
-        # self.drop_distribution = (1**np.array(np.arange(0,50)) * self.drop).astype('float64')
-        # self.drop_distribution[self.drop_limit:] = self.drop_distribution[self.drop_limit:] + self.drop_param
+        self.interp_range = np.array(np.arange(0,50),dtype='float64')
+        self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64')
+        self.drop_limit = 17
+        self.drop_distribution = (1**np.array(np.arange(0,50)) * self.drop).astype('float64')
+        self.drop_distribution[self.drop_limit:] = self.drop_distribution[self.drop_limit:] + self.drop_param
 
         self.commission = 0
         self.open_order_id = []
         self.last_buy_price = []
         
-    def save_backup(self):
-        with open(self.name + ".pickle", "wb") as f:
-            pickle.dump(self.__dict__, f)
-        return
-            
-    def restore_backup(self):
-        with open(self.name + ".pickle", "rb") as f:
-            backup_dict = pickle.load(f)
-        
-        for attr, value in backup_dict.items():
-            setattr(self, attr, value)
-        return
-        
-            
-        
-# params = {'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'}
-# master = []
-# test_symbol = Symbol_long(params, master)
-
-# test_symbol.save_backup()
-
-# with open("BTC--L.pickle", "rb") as f:
-#     backup_dict = pickle.load(f)
-#     backup_dict['acc'] = 100000
-    
-# with open("BTC--L.pickle", "wb") as f:
-#     pickle.dump(backup_dict, f)
-
-# test_symbol.restore_backup()
-
-
-# name = str(abs(params['drop'])) + str(params['profit']) + str(params['k']) + params['asset'] + 'Long'
-
-# with open(name + ".pickle", "rb") as f:
-#     master_back = pickle.load(f)
-
-    
     def trading_points(self):
         
         drop = np.interp(self.buy_level, self.interp_range, self.drop_distribution)        
@@ -429,7 +390,6 @@ class Symbol_long(object):
                 else:
                     self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64')
 
-
             if len(self.open_order_id) != 0:
                 self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=self.open_order_id['orderId'])
             self.base_open_trail = price
@@ -444,6 +404,7 @@ class Symbol_long(object):
             else:
                 self.can_open_trail = False
                 self.can_open = True
+                self.master.account.notifier.send_error(self.name, f"Check negativo long open order")
                 
         if self.can_average_trail:
             self.average_trailing(time, price)
@@ -467,6 +428,7 @@ class Symbol_long(object):
                 self.can_average = True
                 self.can_close_trail = False
                 self.can_close = True
+                self.master.account.notifier.send_error(self.name, f"Check negativo long average order")
 
         if self.can_close_trail:
             self.close_trailing(time, price)
@@ -488,7 +450,9 @@ class Symbol_long(object):
                 self.can_average_trail = False
                 self.can_average = True
                 self.can_close_trail = False
-                self.can_close = True                            
+                self.can_close = True          
+                self.master.account.notifier.send_error(self.name, f"Check negativo long close order")
+                  
         return
     
     def calculate_interp(self):

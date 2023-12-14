@@ -108,9 +108,7 @@ class Symbol_combi(object):
         for asset in self.account.assets:
             self.account.t_balances[asset] = 0
             self.account.t_loans[asset] = 0
-        
-        
-        # base_loan = 0
+            
         for i in self.account.assets:
             self.account.get_asset_balances(i, self.account.amount_precision[i])
         self.account.get_base_balances()

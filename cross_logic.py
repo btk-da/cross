@@ -25,10 +25,8 @@ from sqlalchemy.exc import OperationalError
 
 url = 'https://api.telegram.org/bot6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4/sendMessage'
 
-inputs = [{'drop': 0.2, 'profit': 0.2, 'k': 1.33, 'buy_trail':0.05, 'sell_trail':0.05, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
-          {'drop': -0.2, 'profit': 0.2, 'k': 1.33, 'buy_trail':0.05, 'sell_trail':0.05, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
-          {'drop': 0.3, 'profit': 0.2, 'k': 1.33, 'buy_trail':0.05, 'sell_trail':0.05, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'ETH'},
-          {'drop': -0.3, 'profit': 0.2, 'k': 1.33, 'buy_trail':0.05, 'sell_trail':0.05, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'ETH'}]
+inputs = [{'drop': 0.5, 'profit': 0.3, 'k': 1.33, 'buy_trail':0.1, 'sell_trail':0.1, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'IMX'},
+          {'drop': -0.5, 'profit': 0.3, 'k': 1.33, 'buy_trail':0.1, 'sell_trail':0.1, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'IMX'}]
 """
 inputs = [{'drop': 1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
           {'drop': -1.2, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'drop_param':2, 'level':1, 'pond':5, 'asset': 'BTC'},
@@ -96,7 +94,7 @@ for i in inputs:
     assets.append(i['asset'])
 assets = set(assets)
 
-backup = False
+backup = True
 
 if __name__ == '__main__':
     
@@ -132,13 +130,12 @@ if __name__ == '__main__':
     #     print('System initialized')
     
     # print('Start Operating')
-    
-    account = Margin_account(Notifier())
-    master = Symbol_combi()
-    master.account = account
 
-    
+
     if backup:
+        account = Margin_account(Notifier())
+        master = Symbol_combi()
+        master.account = account
         sql_tables = init_database(assets, True)
         master.account.notifier.tables = sql_tables
         with open("symbols.pickle", "rb") as f:
@@ -148,18 +145,21 @@ if __name__ == '__main__':
             for symbol_instance in master.symbol_list:
                 if symbol_instance.name == name:
                     for attr, value in data.items():
-                        setattr(symbol_instance, attr, value)        
+                        setattr(symbol_instance, attr, value)   
+                    symbol_instance.master = master
         master.init_params(True)  
         print('Backup charged')
         
     else:
+        account = Margin_account(Notifier())
+        master = Symbol_combi()
+        master.account = account
         sql_tables = init_database(assets, False)
         master.account.notifier.tables = sql_tables
         master.add_symbols(inputs)
         master.init_params(False)    
         print('System initialized')
     
-
     print('Start Operating')
     
     
@@ -167,14 +167,16 @@ if __name__ == '__main__':
         
         if master.engine_working == True:
         
-            try:
-                master.update_open_tr()
-                
-                symbols_backup = {}
-                for symbol in master.symbol_list:
-                    symbols_backup[symbol.name] = symbol.__dict__
-                with open("symbols.pickle", "wb") as f:
-                    pickle.dump(symbols_backup, f)
+            # try:
+            master.update_open_tr()
+            
+            symbols_backup = {}
+            for symbol in master.symbol_list:
+                symbols_backup[symbol.name] = copy.deepcopy(symbol.__dict__)
+                symbols_backup[symbol.name]['master'] = []
+
+            with open("symbols.pickle", "wb") as f:
+                pickle.dump(symbols_backup, f)
                 
                 # backup_list = copy.deepcopy(master.symbol_list)
                 # for i in backup_list:
@@ -182,14 +184,14 @@ if __name__ == '__main__':
                 # with open("master.pickle", "wb") as f:
                 #     pickle.dump(backup_list, f)
                     
-            except BinanceAPIException as e:
-                master.account.notifier.send_error('General', 'Binance API error ' + str(e))
-            except requests.exceptions.ReadTimeout as e:
-                master.account.notifier.send_error('General', f"Error de tiempo de espera en la API de Binance: {e}")
-            except OperationalError as e:
-                master.account.notifier.send_error('General', f"Error de conexión a la base de datos: {e}")
-            except Exception as e:
-                master.account.notifier.send_error('General', f"ERROR NO IDENTIFICADO: {e}")
+            # except BinanceAPIException as e:
+            #     master.account.notifier.send_error('General', 'Binance API error ' + str(e))
+            # except requests.exceptions.ReadTimeout as e:
+            #     master.account.notifier.send_error('General', f"Error de tiempo de espera en la API de Binance: {e}")
+            # except OperationalError as e:
+            #     master.account.notifier.send_error('General', f"Error de conexión a la base de datos: {e}")
+            # except Exception as e:
+            #     master.account.notifier.send_error('General', f"ERROR NO IDENTIFICADO: {e}")
             time.sleep(30)
             
             try: # Conectarse con frontend y pedir instrucciones
@@ -246,6 +248,7 @@ if __name__ == '__main__':
                                 if symbol_instance.name == name:
                                     for attr, value in data.items():
                                         setattr(symbol_instance, attr, value)
+                                    symbol_instance.master = master
                                     
                         # with open("master.pickle", "rb") as f:
                         #     master_back = pickle.load(f)
@@ -313,7 +316,8 @@ if __name__ == '__main__':
                                 if symbol_instance.name == name:
                                     for attr, value in data.items():
                                         setattr(symbol_instance, attr, value)
-                        
+                                    symbol_instance.master = master
+
                         
                         # with open("master.pickle", "rb") as f:
                         #     symbol_list = pickle.load(f)
@@ -358,7 +362,8 @@ if __name__ == '__main__':
                                 if symbol_instance.name == name:
                                     for attr, value in data.items():
                                         setattr(symbol_instance, attr, value)
-                                        
+                                    symbol_instance.master = master
+
                         # with open("master.pickle", "rb") as f:
                         #     master_back = pickle.load(f)
                         # master.symbol_list = master_back

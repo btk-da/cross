@@ -27,6 +27,7 @@ class Symbol_combi(object):
             elif params['drop'] < 0:
                 symbol = Symbol_short(params, self)
                 self.wr_list[symbol.nick] = {'Long':0, 'Short':0}
+            print(symbol.master)
 
             try:
                 symbol.price = float(self.account.client.get_symbol_ticker(symbol=symbol.tic)['price'])

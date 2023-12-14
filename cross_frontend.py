@@ -37,7 +37,7 @@ class Frontend():
         self.conn = self.engine.connect()
         self.symbol_names = []
         assets = ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'LTC', 'SOL', 'ATOM', 'BCH', 'DOGE', 'DOT', 'EOS', 'LINK', 
-                  'TRX', 'SHIB', 'AVAX', 'XLM', 'UNI', 'ETC', 'FIL', 'HBAR', 'VET', 'NEAR', 'GRT', 'AAVE', 'DASH', 'MATIC', 'ICP', 'RUNE']
+                  'TRX', 'SHIB', 'AVAX', 'XLM', 'UNI', 'ETC', 'FIL', 'HBAR', 'VET', 'NEAR', 'GRT', 'AAVE', 'DASH', 'MATIC', 'ICP', 'RUNE', 'IMX']
         for i in assets:
             self.symbol_names.append(i + '--L')
             self.symbol_names.append(i + '--S')

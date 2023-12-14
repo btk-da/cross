@@ -92,37 +92,37 @@ class Margin_account():
                 self.get_asset_balances(symbol.asset, self.amount_precision[symbol.asset])
         
                 real = self.balances[symbol.asset]
-                teor = self.t_balances[symbol.asset]
+                teor = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset])
                 loan = self.loans[symbol.asset]
                 correction = False
                 
                 if teor >= 0:
-                    diff_usd = teor - real
+                    diff_usd = round((teor - loan), self.amount_precision[symbol.asset])
                     
                     if abs(diff_usd) * price > 6:
                         
                         if diff_usd > 0:
-                            self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=round(diff_usd, self.amount_precision[symbol.asset]), sideEffectType='AUTO_REPAY')
                             correction = 'BUY ' + str(abs(diff_usd))
+                            self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=round(diff_usd, self.amount_precision[symbol.asset]), sideEffectType='AUTO_REPAY')
                         elif diff_usd < 0:
-                            self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=abs(round(diff_usd, self.amount_precision[symbol.asset])), sideEffectType='AUTO_REPAY')
                             correction = 'SELL ' + str(abs(diff_usd))
+                            self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=abs(round(diff_usd, self.amount_precision[symbol.asset])), sideEffectType='AUTO_REPAY')
                             
                             self.get_asset_balances(symbol.asset, self.amount_precision[symbol.asset])
                             if self.loans[symbol.asset] > 0:
                                 self.client.repay_margin_loan(asset=symbol.asset, amount=self.loans[symbol.asset])
                 
                 else:
-                    diff_usd = abs(teor) - loan
+                    diff_usd = round((abs(teor) - loan), self.amount_precision[symbol.asset])
                     
                     if abs(diff_usd) * price > 6:
                         
                         if diff_usd > 0:
-                            self.client.create_margin_loan(asset=symbol.asset, amount=diff_usd)
                             correction = 'BORROW ' + str(abs(round(diff_usd, self.amount_precision[symbol.asset])))                    
+                            self.client.create_margin_loan(asset=symbol.asset, amount=diff_usd)
                         elif diff_usd < 0:
-                            self.client.repay_margin_loan(asset=symbol.asset, amount=abs(diff_usd))
                             correction = 'REPAY ' + str(abs(round(diff_usd, self.amount_precision[symbol.asset])))  
+                            self.client.repay_margin_loan(asset=symbol.asset, amount=abs(diff_usd))
                             
                         self.get_asset_balances(symbol.asset, self.amount_precision[symbol.asset])
                         if self.balances[symbol.asset] > 0:
@@ -138,13 +138,12 @@ class Margin_account():
                 
             except BinanceAPIException as e:
                 if e.code == -1100:
-                    self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Action: {action}, Name: {symbol.name}, Correction: {correction}")
+                    self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Action: {action}, Name: {symbol.name}, Correction: {correction}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}")
                 elif e.code == -3041:
-                    self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Action: {action}, Name: {symbol.name}, Correction: {correction}, Balance: {str(real)}, Balance_T: {str(teor)}")
+                    self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Action: {action}, Name: {symbol.name}, Correction: {correction}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}")
                 
             except Exception as e:
-                print(f"Check Balance Error: {e}, Asset: {symbol.asset}, Action: {action}, Name: {symbol.name}, Correction: {correction}")
-                self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Action: {action}, Name: {symbol.name}, Correction: {correction}")
+                self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Action: {action}, Name: {symbol.name}, Correction: {correction}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}")
 
         return
             
@@ -211,7 +210,7 @@ class Margin_account():
             
         return output_amount/price
     
-    def create_buy_order(self, symbol, buy_amount_0, price, action):
+    def create_buy_order(self, symbol, buy_amount_0, price, action, actual_price):
         
         buy_amount = self.check_funds(buy_amount_0*price, 'BUY', price)
         check = False
@@ -219,31 +218,39 @@ class Margin_account():
         if buy_amount > 0:
             order_qty = self.round_decimals_up(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
-            stop_price = round((order_price*0.999), self.price_precision[symbol.asset])
-            self.notifier.send_error(symbol.name, f"Buy Order Creation;  qty: {order_qty};  price: {order_price}; Price: {price}; Stop price: {stop_price}")
-
+            stop_price = round((actual_price*1.001), self.price_precision[symbol.asset])
+            # self.notifier.send_error(symbol.name, f"Buy Order Creation;  qty: {order_qty};  price: {order_price}; Stop price: {stop_price}")
     
+            # new_row = self.notifier.tables['balances'](Date='Pre Buy Placed', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous', Action = action)
+            # sql_session.add(new_row)
+            # sql_session.commit()
+            
             try:
                 self.get_asset_balances(symbol.asset, self.amount_precision[symbol.asset])
     
                 if self.loans[symbol.asset] > 0:
                     side_effect = 'AUTO_REPAY'
-                    buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
                 else:
                     side_effect = 'MARGIN_BUY'
+                    
+                try:
                     buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
+                except BinanceAPIException as e:
+                    if e.code == -2010:
+                        buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
                 
                 buy_open_order['action'] = action
                 symbol.open_order_id = buy_open_order
-    
                 check = True
+                
+                # new_row = self.notifier.tables['balances'](Date='Post Buy Placed', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous', Action = action)
+                # sql_session.add(new_row)
+                # sql_session.commit()
     
             except BinanceAPIException as e:
                 if e.code == -3045:
                     self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
                 elif e.code == -3044:
-                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
-                elif e.code == -2010:
                     self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
                 elif e.code == -3007:
                     self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
@@ -252,13 +259,11 @@ class Margin_account():
                     self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
 
             except Exception as e:
-                self.notifier.register_output('Error', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
                 self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
-
 
         return check
     
-    def create_sell_order(self, symbol, buy_amount_0, price, action):
+    def create_sell_order(self, symbol, buy_amount_0, price, action, actual_price):
         
         buy_amount = self.check_funds(buy_amount_0*price, 'SELL', price)
         check = False
@@ -266,40 +271,48 @@ class Margin_account():
         if buy_amount > 0:
             order_qty = self.round_decimals_down(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
-            stop_price = round((order_price*1.001), self.price_precision[symbol.asset])
-            self.notifier.send_error(symbol.name, f"Buy Order Creation;  qty: {order_qty};  price: {order_price}; Price: {price}; Stop price: {stop_price}")
-    
+            stop_price = round(actual_price*0.999, self.price_precision[symbol.asset])
+            # self.notifier.send_error(symbol.name, f"Sell Order Creation;  qty: {order_qty};  price: {order_price}; Stop price: {stop_price}")
+            
+            # new_row = self.notifier.tables['balances'](Date='Pre Sell Placed', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous', Action = action)
+            # sql_session.add(new_row)
+            # sql_session.commit()
+            
             try:
                 self.get_base_balances()
                 
                 if self.loans[self.base_coin] > 0:
                     side_effect = 'AUTO_REPAY'
-                    sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
                 else:
                     side_effect = 'MARGIN_BUY'
+                
+                try:
                     sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
-    
+                except BinanceAPIException as e:
+                    if e.code == -2010:
+                        sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                
                 sell_open_order['action'] = action
                 symbol.open_order_id = sell_open_order
-    
                 check = True
+                
+                # new_row = self.notifier.tables['balances'](Date='Post Sell Placed', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous', Action = action)
+                # sql_session.add(new_row)
+                # sql_session.commit()
                 
             except BinanceAPIException as e:
                 if e.code == -3045:
-                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}")
                 elif e.code == -3044:
-                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
-                elif e.code == -2010:
-                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}")
                 elif e.code == -3007:
-                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                    self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}")
                 else:
-                    self.notifier.register_output('Error', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
-                    self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                    self.notifier.register_output('Error', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}")
+                    self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}")
 
             except Exception as e:
-                self.notifier.register_output('Error', symbol.asset, symbol.side, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
-                self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}")
 
         return check
     
@@ -373,6 +386,10 @@ class Margin_account():
                 symbol.average_order(date, average_price, total_amount, total_commission)
             elif order['action'] == 'CLOSE':
                 symbol.close_order(date, average_price, total_amount, total_commission)
+                
+            new_row = self.notifier.tables['balances'](Date='Post Order Filled', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous Check', Action = order['action'])
+            sql_session.add(new_row)
+            sql_session.commit()
         except Exception as e:
             self.notifier.send_error('Check Filled Order', f"Error: {e}, Name: {symbol.name}, ID: {symbol.open_order_id['orderId']}")
             

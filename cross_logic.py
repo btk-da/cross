@@ -92,7 +92,7 @@ for i in inputs:
     assets.append(i['asset'])
 assets = set(assets)
 
-backup = False
+backup = True
 
 if __name__ == '__main__':
     
@@ -176,16 +176,16 @@ if __name__ == '__main__':
         
         if master.engine_working == True:
         
-            # try:
-            master.update_open_tr()
-            
-            symbols_backup = {}
-            for symbol in master.symbol_list:
-                symbols_backup[symbol.name] = copy.deepcopy(symbol.__dict__)
-                symbols_backup[symbol.name]['master'] = []
-
-            with open("symbols.pickle", "wb") as f:
-                pickle.dump(symbols_backup, f)
+            try:
+                master.update_open_tr()
+                
+                symbols_backup = {}
+                for symbol in master.symbol_list:
+                    symbols_backup[symbol.name] = copy.deepcopy(symbol.__dict__)
+                    symbols_backup[symbol.name]['master'] = []
+    
+                with open("symbols.pickle", "wb") as f:
+                    pickle.dump(symbols_backup, f)
                 
                 # backup_list = copy.deepcopy(master.symbol_list)
                 # for i in backup_list:
@@ -193,14 +193,14 @@ if __name__ == '__main__':
                 # with open("master.pickle", "wb") as f:
                 #     pickle.dump(backup_list, f)
                     
-            # except BinanceAPIException as e:
-            #     master.account.notifier.send_error('General', 'Binance API error ' + str(e))
-            # except requests.exceptions.ReadTimeout as e:
-            #     master.account.notifier.send_error('General', f"Error de tiempo de espera en la API de Binance: {e}")
-            # except OperationalError as e:
-            #     master.account.notifier.send_error('General', f"Error de conexión a la base de datos: {e}")
-            # except Exception as e:
-            #     master.account.notifier.send_error('General', f"ERROR NO IDENTIFICADO: {e}")
+            except BinanceAPIException as e:
+                master.account.notifier.send_error('General', 'Binance API error ' + str(e))
+            except requests.exceptions.ReadTimeout as e:
+                master.account.notifier.send_error('General', f"Error de tiempo de espera en la API de Binance: {e}")
+            except OperationalError as e:
+                master.account.notifier.send_error('General', f"Error de conexión a la base de datos: {e}")
+            except Exception as e:
+                master.account.notifier.send_error('General', f"ERROR NO IDENTIFICADO: {e}")
             time.sleep(30)
             
             try: # Conectarse con frontend y pedir instrucciones

@@ -219,11 +219,6 @@ class Margin_account():
             order_qty = self.round_decimals_up(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
             stop_price = round((actual_price*1.001), self.price_precision[symbol.asset])
-            # self.notifier.send_error(symbol.name, f"Buy Order Creation;  qty: {order_qty};  price: {order_price}; Stop price: {stop_price}")
-    
-            # new_row = self.notifier.tables['balances'](Date='Pre Buy Placed', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous', Action = action)
-            # sql_session.add(new_row)
-            # sql_session.commit()
             
             try:
                 self.get_asset_balances(symbol.asset, self.amount_precision[symbol.asset])
@@ -235,18 +230,16 @@ class Margin_account():
                     
                 try:
                     buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
+                    buy_open_order['action'] = action
+                    symbol.open_order_id = buy_open_order
+                    check = True
                 except BinanceAPIException as e:
                     if e.code == -2010:
                         buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                        buy_open_order['action'] = action
+                        symbol.open_order_id = buy_open_order
+                        check = True
                 
-                buy_open_order['action'] = action
-                symbol.open_order_id = buy_open_order
-                check = True
-                
-                # new_row = self.notifier.tables['balances'](Date='Post Buy Placed', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous', Action = action)
-                # sql_session.add(new_row)
-                # sql_session.commit()
-    
             except BinanceAPIException as e:
                 if e.code == -3045:
                     self.notifier.register_output('Warn', symbol.asset, symbol.side, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
@@ -288,13 +281,15 @@ class Margin_account():
                 
                 try:
                     sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
+                    sell_open_order['action'] = action
+                    symbol.open_order_id = sell_open_order
+                    check = True
                 except BinanceAPIException as e:
                     if e.code == -2010:
                         sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
-                
-                sell_open_order['action'] = action
-                symbol.open_order_id = sell_open_order
-                check = True
+                        sell_open_order['action'] = action
+                        symbol.open_order_id = sell_open_order
+                        check = True
                 
                 # new_row = self.notifier.tables['balances'](Date='Post Sell Placed', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous', Action = action)
                 # sql_session.add(new_row)

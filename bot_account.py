@@ -6,7 +6,7 @@ from binance.client import Client
 from binance.exceptions import BinanceAPIException
 from bot_database import sql_session
 import traceback
-from sqlalchemy import exc
+from sqlalchemy import exc, delete
 
 class Margin_account():
     
@@ -231,13 +231,21 @@ class Margin_account():
                 try:
                     buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
                     buy_open_order['action'] = action
-                    symbol.open_order_id = buy_open_order
+                    symbol.open_order_id = buy_open_order                    
+                    fecha = datetime.utcfromtimestamp(buy_open_order['transactTime'] / 1000).strftime('%d/%m/%Y %H:%M')                    
+                    new_row = self.notifier.tables['open_orders'](Date=fecha, Name=symbol.name, Asset=buy_open_order['symbol'], Action = action, Side='BUY', Price = buy_open_order['price'], Quantity = buy_open_order['origQty'], orderId=buy_open_order['orderId'])
+                    sql_session.add(new_row)
+                    sql_session.commit()
                     check = True
                 except BinanceAPIException as e:
                     if e.code == -2010:
                         buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
                         buy_open_order['action'] = action
                         symbol.open_order_id = buy_open_order
+                        fecha = datetime.utcfromtimestamp(buy_open_order['transactTime'] / 1000).strftime('%d/%m/%Y %H:%M')                    
+                        new_row = self.notifier.tables['open_orders'](Date=fecha, Name=symbol.name, Asset=buy_open_order['symbol'], Action = action, Side='BUY', Price = buy_open_order['price'], Quantity = buy_open_order['origQty'], orderId=buy_open_order['orderId'])
+                        sql_session.add(new_row)
+                        sql_session.commit()
                         check = True
                 
             except BinanceAPIException as e:
@@ -252,7 +260,7 @@ class Margin_account():
                     self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
 
             except Exception as e:
-                self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
+                self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}")
 
         return check
     
@@ -265,11 +273,6 @@ class Margin_account():
             order_qty = self.round_decimals_down(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
             stop_price = round(actual_price*0.999, self.price_precision[symbol.asset])
-            # self.notifier.send_error(symbol.name, f"Sell Order Creation;  qty: {order_qty};  price: {order_price}; Stop price: {stop_price}")
-            
-            # new_row = self.notifier.tables['balances'](Date='Pre Sell Placed', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous', Action = action)
-            # sql_session.add(new_row)
-            # sql_session.commit()
             
             try:
                 self.get_base_balances()
@@ -283,17 +286,21 @@ class Margin_account():
                     sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
                     sell_open_order['action'] = action
                     symbol.open_order_id = sell_open_order
+                    fecha = datetime.utcfromtimestamp(sell_open_order['transactTime'] / 1000).strftime('%d/%m/%Y %H:%M')                    
+                    new_row = self.notifier.tables['open_orders'](Date=fecha, Name=symbol.name, Asset=sell_open_order['symbol'], Action = action, Side='SELL', Price = sell_open_order['price'], Quantity = sell_open_order['origQty'], orderId=sell_open_order['orderId'])
+                    sql_session.add(new_row)
+                    sql_session.commit()
                     check = True
                 except BinanceAPIException as e:
                     if e.code == -2010:
                         sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
                         sell_open_order['action'] = action
                         symbol.open_order_id = sell_open_order
+                        fecha = datetime.utcfromtimestamp(sell_open_order['transactTime'] / 1000).strftime('%d/%m/%Y %H:%M')                    
+                        new_row = self.notifier.tables['open_orders'](Date=fecha, Name=symbol.name, Asset=sell_open_order['symbol'], Action = action, Side='SELL', Price = sell_open_order['price'], Quantity = sell_open_order['origQty'], orderId=sell_open_order['orderId'])
+                        sql_session.add(new_row)
+                        sql_session.commit()
                         check = True
-                
-                # new_row = self.notifier.tables['balances'](Date='Post Sell Placed', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous', Action = action)
-                # sql_session.add(new_row)
-                # sql_session.commit()
                 
             except BinanceAPIException as e:
                 if e.code == -3045:
@@ -307,7 +314,7 @@ class Margin_account():
                     self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}")
 
             except Exception as e:
-                self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}")
+                self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}")
 
         return check
     
@@ -373,7 +380,14 @@ class Margin_account():
             average_price = np.dot(executed_price, executed_amount)/total_amount
             total_commission = np.sum(executed_commission)
             self.notifier.register_output('Action', symbol.asset, symbol.side, order['action'] + ' Order Filled ' + str(open_order['orderId']))
+            
+            order_id_to_delete = order['orderId']
+            delete_statement = delete(self.notifier.tables['open_orders']).where(self.notifier.tables['open_orders'].orderId == order_id_to_delete)
+            sql_session.execute(delete_statement)
+            sql_session.commit()
+            
             symbol.open_order_id = []
+
     
             if order['action'] == 'OPEN':
                 symbol.open_order(date, average_price, total_amount, total_commission)

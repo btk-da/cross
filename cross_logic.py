@@ -92,44 +92,10 @@ for i in inputs:
     assets.append(i['asset'])
 assets = set(assets)
 
-backup = True
+backup = False
 
 if __name__ == '__main__':
     
-    # if backup:
-        
-    #     sql_tables = init_database(sql_assets, True)
-    #     account = Margin_account(Notifier())
-    #     account.notifier.tables = sql_tables
-        
-    #     master = Symbol_combi()
-    #     master.account = account
-        
-    #     with open("master.pickle", "rb") as f:
-    #         master_back = pickle.load(f)
-        
-    #     master.symbol_list = master_back
-    #     for i in master.symbol_list:
-    #         i.master = master
-
-    #     master.init_params(True)  
-    #     print('Backup charged')
-        
-    # else:
-    
-    #     sql_tables = init_database(sql_assets, False)
-    #     account = Margin_account(Notifier())
-    #     account.notifier.tables = sql_tables
-        
-    #     master = Symbol_combi()
-    #     master.account = account
-    #     master.add_symbols(inputs)
-    #     master.init_params(False)    
-    #     print('System initialized')
-    
-    # print('Start Operating')
-
-
     if backup:
         account = Margin_account(Notifier())
         master = Symbol_combi()
@@ -187,20 +153,14 @@ if __name__ == '__main__':
                 with open("symbols.pickle", "wb") as f:
                     pickle.dump(symbols_backup, f)
                 
-                # backup_list = copy.deepcopy(master.symbol_list)
-                # for i in backup_list:
-                #     i.master = []
-                # with open("master.pickle", "wb") as f:
-                #     pickle.dump(backup_list, f)
-                    
             except BinanceAPIException as e:
-                master.account.notifier.send_error('General', 'Binance API error ' + str(e))
+                master.account.notifier.send_error('General', f'Binance API error: {e}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}')
             except requests.exceptions.ReadTimeout as e:
                 master.account.notifier.send_error('General', f"Error de tiempo de espera en la API de Binance: {e}")
             except OperationalError as e:
                 master.account.notifier.send_error('General', f"Error de conexión a la base de datos: {e}")
             except Exception as e:
-                master.account.notifier.send_error('General', f"ERROR NO IDENTIFICADO: {e}")
+                master.account.notifier.send_error('General', f'ERROR NO IDENTIFICADO: {e}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}')
             time.sleep(30)
             
             try: # Conectarse con frontend y pedir instrucciones
@@ -259,12 +219,6 @@ if __name__ == '__main__':
                                         setattr(symbol_instance, attr, value)
                                     symbol_instance.master = master
                                     
-                        # with open("master.pickle", "rb") as f:
-                        #     master_back = pickle.load(f)
-                        # master.symbol_list = master_back
-                        # for i in master.symbol_list:
-                        #     i.master = master
-                            
                         if switch_params['side'] == 'All':
                             if switch_params['mode'] == 'OFF':
                                 for i in master.symbol_list:
@@ -304,7 +258,7 @@ if __name__ == '__main__':
                         restart_symbols = delete(master.account.notifier.tables['symbols'])
                         sql_session.execute(restart_symbols)
                         for symbol in master.symbol_list:
-                            new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Drop_param=symbol.drop_param, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
+                            new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.symbol_status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
                             sql_session.add(new_row)
                         sql_session.commit()
     
@@ -326,31 +280,46 @@ if __name__ == '__main__':
                                     for attr, value in data.items():
                                         setattr(symbol_instance, attr, value)
                                     symbol_instance.master = master
-
-                        
-                        # with open("master.pickle", "rb") as f:
-                        #     symbol_list = pickle.load(f)
-                        
-                        selected_symbol = next(symbol for symbol in master.symbol_list if symbol.name == edit_params['name'])
-                        mapeo = {'Drop': 'drop', 'TP': 'profit', 'K': 'k', 'Buy Trail': 'buy_trail', 'Sell Trail': 'sell_trail', 'Drop Param':'drop_param', 'Level': 'level', 'Pond': 'pond',
-                                    'Switch': 'switch', 'Status': 'status', 'Can Open': 'can_open', 'Can Average': 'can_average', 'Can Close': 'can_close', 
+                                    
+                        mapeo = {'Drop': 'drop', 'TP': 'profit', 'K': 'k', 'Buy Trail': 'buy_trail', 'Sell Trail': 'sell_trail', 'Level': 'level', 'Pond': 'pond',
+                                    'Switch': 'switch', 'Symbol Status': 'symbol status', 'Can Open': 'can_open', 'Can Average': 'can_average', 'Can Close': 'can_close', 
                                     'Can Open Trail': 'can_open_trail', 'Can Average Trail': 'can_average_trail', 'Can Close Trail': 'can_close_trail'}
                         
                         if edit_params['attribute'] in mapeo:
                             attribute_name = mapeo[edit_params['attribute']]
-                            if attribute_name in ['switch', 'status', 'can_open', 'can_average', 'can_close', 'can_open_trail', 'can_average_trail', 'can_close_trail']:
+                                    
+                        if edit_params['name'] == 'All':
+                            
+                            for selected_symbol in master.symbol_list:
+                                if attribute_name in ['switch', 'symbol status', 'can_open', 'can_average', 'can_close', 'can_open_trail', 'can_average_trail', 'can_close_trail']:
+                                    setattr(selected_symbol, attribute_name, bool(int(edit_params['value'])))
+                                else:
+                                    setattr(selected_symbol, attribute_name, edit_params['value'])
+                                warn = 'Changed completed ' + 'Symbol: ' + symbol.name + 'Param: ' + str(edit_params['attribute']) + 'New Value: ' + str(edit_params['value'])
+                                requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
+                                
+                        else:                               
+
+                            selected_symbol = next(symbol for symbol in master.symbol_list if symbol.name == edit_params['name'])
+                            # mapeo = {'Drop': 'drop', 'TP': 'profit', 'K': 'k', 'Buy Trail': 'buy_trail', 'Sell Trail': 'sell_trail', 'Level': 'level', 'Pond': 'pond',
+                            #             'Switch': 'switch', 'Symbol Status': 'symbol status', 'Can Open': 'can_open', 'Can Average': 'can_average', 'Can Close': 'can_close', 
+                            #             'Can Open Trail': 'can_open_trail', 'Can Average Trail': 'can_average_trail', 'Can Close Trail': 'can_close_trail'}
+                            
+                            # if edit_params['attribute'] in mapeo:
+                                # attribute_name = mapeo[edit_params['attribute']]
+                            if attribute_name in ['switch', 'symbol status', 'can_open', 'can_average', 'can_close', 'can_open_trail', 'can_average_trail', 'can_close_trail']:
                                 setattr(selected_symbol, attribute_name, bool(int(edit_params['value'])))
                             else:
                                 setattr(selected_symbol, attribute_name, edit_params['value'])
-                        
-                        warn = 'Changed completed ' + 'Symbol: ' + selected_symbol.name + 'Param: ' + str(attribute_name) + 'New Value: ' + str(edit_params['value'])
-                        requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
+                    
+                            warn = 'Changed completed ' + 'Symbol: ' + selected_symbol.name + 'Param: ' + str(attribute_name) + 'New Value: ' + str(edit_params['value'])
+                            requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
 
                         restart_symbols = delete(master.account.notifier.tables['symbols'])
                         sql_session.execute(restart_symbols)
                         for symbol in master.symbol_list:
                             symbol.trading_points()
-                            new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Drop_param=symbol.drop_param, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
+                            new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.symbol_status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
                             sql_session.add(new_row)
                         sql_session.commit()                    
         
@@ -373,18 +342,12 @@ if __name__ == '__main__':
                                         setattr(symbol_instance, attr, value)
                                     symbol_instance.master = master
 
-                        # with open("master.pickle", "rb") as f:
-                        #     master_back = pickle.load(f)
-                        # master.symbol_list = master_back
-                        # for i in master.symbol_list:
-                        #     i.master = master
-                        
                         master.add_new_symbol(add_symbol_params)
     
                         restart_symbols = delete(master.account.notifier.tables['symbols'])
                         sql_session.execute(restart_symbols)
                         for symbol in master.symbol_list:
-                            new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Drop_param=symbol.drop_param, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
+                            new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.symbol_status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
                             sql_session.add(new_row)
                         sql_session.commit()      
     

@@ -114,20 +114,18 @@ def init_database(assets, backup):
         Long_funds = Column(Float)
         Short_funds = Column(Float)
     tables['funds'] = Table8
-    
+
     class Table9(sql_base):
         __tablename__ = 'open_orders'
         id = Column(Integer, primary_key=True)
         Date = Column(String(50))
         Name = Column(String(50))
-        Order_id = Column(String(50))
-        Status = Column(String(50))
-        Symbol = Column(String(50))
+        Asset = Column(String(50))
+        Action = Column(String(50))
         Side = Column(String(50))
         Price = Column(Float)
-        Amount = Column(Float)
-        Filled = Column(Float)
-        Timer=Column(Float)
+        Quantity = Column(Float)
+        orderId = Column(Float)
     tables['open_orders'] = Table9
 
     class Table10(sql_base):
@@ -139,7 +137,6 @@ def init_database(assets, backup):
         K = Column(Float)
         Buy_trail = Column(Float)
         Sell_trail = Column(Float)
-        Drop_param = Column(Float)
         Level = Column(Float)
         Pond = Column(Float)
         Switch = Column(String(50))

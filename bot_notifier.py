@@ -13,8 +13,8 @@ class Notifier():
         self.tables = {}
         self.token = '6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4'
         
-        self.eqs = {'gorka':22288, 'aita':40264, 'inaki':15135, 'nacho':1304.245, 'total':83455.22}
-        self.parts = {'gorka':63.3, 'aita':24.2, 'inaki':9.1, 'nacho':0.8}
+        self.eqs = {'gorka':23494, 'aita':40639, 'inaki':15276, 'nacho':1316, 'total':85205}
+        self.parts = {'gorka':63.8, 'aita':23.8, 'inaki':9, 'nacho':0.8}
         self.ids = {'gorka':'-1002116297039', 'aita':'-1001517241898', 'inaki':'-1002079190459', 'nacho':'-1002080234130', 'error':'-1002041194998', 'comms':'-1001966519898', 'general':'-1002023987289'}
         
     def send_order_placed(self, action, symbol, price, amount):
@@ -104,7 +104,7 @@ class Notifier():
         
             message = ('#OPERATION CLOSED' + '\n' + 
                        'Profit ($): ' + str(round(client_profit, 4)) + '\n' +
-                       'Total: ' + str(round(self.eqs[client], 4)))
+                       'Total: ' + str(round(self.eqs[client], 2)))
             try:
                 requests.post('https://api.telegram.org/bot' + self.token + '/sendMessage', data={'chat_id': self.ids[client], 'text': message, 'parse_mode': 'HTML'})
             except Exception as e:

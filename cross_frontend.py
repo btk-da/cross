@@ -42,7 +42,7 @@ class Frontend():
             self.symbol_names.append(i + '--L')
             self.symbol_names.append(i + '--S')
             
-        self.symbol_names.append('ALL')
+        self.symbol_names.append('All')
         self.logic_front = 5559
         self.front_logic = 5558
 
@@ -275,6 +275,32 @@ class Frontend():
         
         # # Mostrar la tabla en el dashboard de Streamlit
         # st.plotly_chart(fig)
+        
+        # TABLA OPEN ORDERS
+        df_open_orders = pd.read_sql_table('open_orders', self.conn, parse_dates=['Date'])
+        del df_open_orders['id']
+        
+        fig = go.Figure(data=[go.Table(
+            header=dict(values=list(df_open_orders.columns),
+                        fill_color='paleturquoise',
+                        align='left'),
+            cells=dict(values=[df_open_orders[col] for col in df_open_orders.columns],
+                       fill_color='lavender',
+                       align='left'))])
+        
+        fig.update_layout(
+            margin=dict(l=0, r=0, t=0, b=0),
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            font=dict(family='Arial', size=12, color='black'),
+            showlegend=False,
+            title={'text': 'Transacciones'},
+            width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
+            height=200  # Altura de la tabla, puedes ajustarlo según tus necesidades
+        )
+        
+        # Mostrar la tabla en el dashboard de Streamlit
+        st.plotly_chart(fig)
             
         return
     
@@ -338,7 +364,7 @@ class Frontend():
                     fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[1][0], points[1][0]], mode='lines', line=dict(color='rgba(0, 128, 0, 0.4)', width=2, dash='dash'), name='Open Trail Point'))
                     annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[1][0], xanchor='left', yanchor='middle', text='Open Trail Point : ' + str(points[1][0]), showarrow=False, font=dict(color='green')))
                     
-                if int(df_symbols[df_symbols['Name'] == option]['Symbol_status'].iloc[0]) == 1:
+                if int(df_symbols[df_symbols['Name'] == option]['Can_open'].iloc[0]) == 0 and int(df_symbols[df_symbols['Name'] == option]['Can_open_trail'].iloc[0]) == 0:
                     fig.add_trace(go.Scatter(x=[df_prices['Date'].min(), df_prices['Date'].max()], y=[points[2][0], points[2][0]], mode='lines', line=dict(color='rgba(0, 0, 255, 0.3)', width=2, dash='dash'), name='Average Price'))
                     annotations.append(dict(xref='paper', yref='y', x=1.01, y=points[2][0], xanchor='left', yanchor='middle', text='Average Price : ' + str(points[2][0]), showarrow=False, font=dict(color='blue')))
     
@@ -431,8 +457,8 @@ class Frontend():
         
         # EDIT SYMBOLS
         symbol_n = st.selectbox("Select Symbol", self.symbol_names)
-        param = st.selectbox("Select Parameter", ['Switch', 'Engine', 'Drop', 'TP', 'K', 'Buy Trail', 'Sell Trail', 'Drop Param', 'Level', 'Pond',
-                                                  'Status', 'Can Open', 'Can Average', 'Can Close', 'Can Open Trail', 'Can Average Trail', 'Can Close Trail'])
+        param = st.selectbox("Select Parameter", ['Switch', 'Engine', 'Drop', 'TP', 'K', 'Buy Trail', 'Sell Trail', 'Level', 'Pond',
+                                                  'Symbol Status', 'Can Open', 'Can Average', 'Can Close', 'Can Open Trail', 'Can Average Trail', 'Can Close Trail'])
         new_value = st.number_input(str(param))
         new_params ={'name': symbol_n, 'attribute': param, 'value': new_value}
         
@@ -445,12 +471,11 @@ class Frontend():
         k = st.number_input('k', value=1.2)
         buy_trail = st.number_input('buy trail', value=0.25)
         sell_trail = st.number_input('sell trail', value=0.15)
-        drop_param = st.number_input('drop param', value=2.5)
         level = st.number_input('level', value=1)
         pond = st.number_input('pond', value=5)
         asset = st.text_input('asset')
-        inputs = [{'drop': drop, 'profit': profit, 'k': k, 'buy_trail':buy_trail, 'sell_trail':sell_trail, 'drop_param':drop_param, 'level':level, 'pond':pond, 'asset': asset},
-                  {'drop': -drop, 'profit': profit, 'k': k, 'buy_trail':sell_trail, 'sell_trail':buy_trail, 'drop_param':drop_param, 'level':level, 'pond':pond, 'asset': asset}]
+        inputs = [{'drop': drop, 'profit': profit, 'k': k, 'buy_trail':buy_trail, 'sell_trail':sell_trail, 'level':level, 'pond':pond, 'asset': asset},
+                  {'drop': -drop, 'profit': profit, 'k': k, 'buy_trail':sell_trail, 'sell_trail':buy_trail, 'level':level, 'pond':pond, 'asset': asset}]
         
         with st.form("add_form"):
             st.form_submit_button(label="ADD SYMBOL", on_click=self.add_symbol, args=(inputs,))

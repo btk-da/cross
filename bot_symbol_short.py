@@ -14,7 +14,7 @@ class Symbol_short(object):
         self.k = params['k']
         self.buy_trail = params['sell_trail']
         self.sell_trail = params['buy_trail']
-        self.drop_param = params['drop_param']
+        # self.drop_param = params['drop_param']
         self.level = params['level']
         self.pond = params['pond']     
         self.asset = params['asset']
@@ -58,18 +58,14 @@ class Symbol_short(object):
 
         self.interp_range = np.array(np.arange(0,50),dtype='float64')
         self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64')
-        self.drop_limit = 17
-        self.drop_distribution = (1**np.array(np.arange(0,50)) * self.drop).astype('float64')
-        self.drop_distribution[self.drop_limit:] = self.drop_distribution[self.drop_limit:] + self.drop_param
-
+        
         self.commission = 0
         self.open_order_id = []
         self.last_buy_price = []
         
     def trading_points(self):
         
-        drop = np.interp(self.buy_level, self.interp_range, self.drop_distribution)
-        self.average_point = self.last_buy_price * (1 + drop/100)
+        self.average_point = self.last_buy_price * (1 + self.drop/100)
         self.close_point = self.average_price * (1 - (self.profit+self.buy_trail)/100)
         return
         
@@ -131,9 +127,7 @@ class Symbol_short(object):
         self.master.account.t_balances[self.asset] = self.master.account.t_balances[self.asset] - amount
         self.master.account.t_balances[self.master.account.base_coin] = self.master.account.t_balances[self.master.account.base_coin] + amount*price - comision
 
-        drop = np.interp(self.buy_level, self.interp_range, self.drop_distribution)
-
-        self.average_point = price * (1 + drop/100)
+        self.average_point = price * (1 + self.drop/100)
         self.close_point = self.average_price * (1 - (self.profit+self.buy_trail)/100)
         
         self.status = True
@@ -152,9 +146,7 @@ class Symbol_short(object):
         sql_session.commit()
         
         self.master.account.notifier.send_open_order_filled(price, amount, self)
-        # if comision != 0:
-        #     self.master.account.check_balance(self, price, 'OPEN', time)
-
+        
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
         new_row = self.master.account.notifier.tables['orders'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, Type='Sell', BuyLevel=self.buy_level, Price=price, Amount=amount, Cost=round(self.acc), Commission=comision)
@@ -227,22 +219,16 @@ class Symbol_short(object):
         self.master.account.t_balances[self.master.account.base_coin] = self.master.account.t_balances[self.master.account.base_coin] + amount*price - comision
         
         total_drop = (price/self.open_price - 1) * 100
-        if total_drop <= self.drop_limit*self.drop:
-            self.buy_level = round(total_drop / self.drop, 1)
-        else:
-            self.buy_level = round(((total_drop - self.drop_limit*self.drop) / (self.drop + self.drop_param) + self.drop_limit), 1)
-        
+        self.buy_level = round(total_drop / self.drop, 1)
         last_drop = (price/self.last_buy_price - 1) * 100
         
-        drop = np.interp(self.buy_level, self.interp_range, self.drop_distribution)
-        self.average_point = price * (1 + drop/100)
+        self.average_point = price * (1 + self.drop/100)
         self.close_point = self.average_price * (1 - (self.profit+self.buy_trail)/100)
         
         self.can_average = True
         self.can_average_trail = False
         
         self.master.account.notifier.send_average_order_filled(price, amount, self, last_drop)
-        # self.master.account.check_balance(self, price, 'AVERAGE', time)
 
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
@@ -322,7 +308,6 @@ class Symbol_short(object):
         covered = round(((self.last_buy_price/self.open_price - 1) * 100), 2)
 
         self.master.account.notifier.send_transaction_closed_filled(self, profit, usd_profit, self.commission, price, covered)        
-        # self.master.account.check_balance(self, price, 'CLOSE', time)
 
         new_row = self.master.account.notifier.tables['funds'](Date=str(time), Funds=self.master.account.funds, Long_funds=self.master.account.long_acc, Short_funds=self.master.account.short_acc)
         sql_session.add(new_row)
@@ -404,8 +389,6 @@ class Symbol_short(object):
             else:
                 self.can_open_trail = False
                 self.can_open = True
-                # self.master.account.notifier.send_error(self.name, f"Check negativo short open order")
-
         
         if self.can_average_trail:
             self.average_trailing(time, price)
@@ -429,8 +412,6 @@ class Symbol_short(object):
                 self.can_average = True
                 self.can_close_trail = False
                 self.can_close = True
-                # self.master.account.notifier.send_error(self.name, f"Check negativo short average order")
-
 
         if self.can_close_trail:
             self.close_trailing(time, price)
@@ -453,17 +434,13 @@ class Symbol_short(object):
                 self.can_average = True
                 self.can_close_trail = False
                 self.can_close = True             
-                # self.master.account.notifier.send_error(self.name, f"Check negativo short close order")
 
         return
     
     def calculate_interp(self):
         
         total_drop = (self.average_trail_point/self.open_price - 1) * 100
-        if total_drop <= self.drop_limit*self.drop:
-            buy_level = round(total_drop / self.drop, 1)
-        else:
-            buy_level = round(((total_drop - self.drop_limit*self.drop) / (self.drop + self.drop_param) + self.drop_limit), 1)
+        buy_level = round(total_drop / self.drop, 1)
         buy_amount = np.interp(buy_level, self.interp_range, self.buy_distribution) - self.acc      
 
         return buy_amount   

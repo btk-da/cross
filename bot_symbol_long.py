@@ -41,7 +41,6 @@ class Symbol_long(object):
         self.open_price_list = np.array([])
         self.open_asset_amount_list = np.array([])
         self.asset_acc = 0     
-        self.open_point = 0
         self.average_price = 0
         self.average_point = 0.0000000001
         self.close_point = 1000000000
@@ -394,7 +393,6 @@ class Symbol_long(object):
                 self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=self.open_order_id['orderId'])
             self.base_open_trail = price
             self.open_trail_point = self.base_open_trail*(1 + self.buy_trail/100)
-            self.open_point = price
             buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
             check = self.master.account.create_buy_order(self, buy_amount/self.open_trail_point, self.open_trail_point, 'OPEN', price)
             if check:

@@ -385,7 +385,7 @@ class Symbol_short(object):
             if self.master.wr_list[self.nick]['Long'] >= self.level*3 and self.master.wr_list[self.nick]['Long'] > self.master.wr_list[self.nick]['Short']:
                 self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64') * self.pond * 2
             else:
-                if self.master.wr_list['GENERAL']['Long'] >= self.level and self.master.wr_list['GENERAL']['Long'] > self.master.wr_list['GENERAL']['short']:
+                if self.master.wr_list['GENERAL']['Long'] >= self.level and self.master.wr_list['GENERAL']['Long'] > self.master.wr_list['GENERAL']['Short']:
                     self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64') * self.pond
                 else:
                     self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64')

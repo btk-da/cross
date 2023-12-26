@@ -161,9 +161,9 @@ class Symbol_combi(object):
                 self.account.notifier.register_output('Error', symbol.asset, symbol.side, 'Reading price failed: ' + str(e))
                 price = symbol.price
             
-            if price > symbol.price*(1 + 0.1):
+            if price > symbol.price*(1 + 0.15):
                 print('Last Price: ', symbol.price, 'Higher price', price)
-            elif price < symbol.price*(1 - 0.1):
+            elif price < symbol.price*(1 - 0.15):
                 print('Last Price: ', symbol.price, 'Lower price', price)
             else:
                 symbol.price = float(price)

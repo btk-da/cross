@@ -142,6 +142,7 @@ class Symbol_long(object):
         self.can_average = True
         self.can_close = True
         self.can_open_trail = False
+        self.can_open = False
         
         indiv_pond = self.acc/self.master.account.max_leverage_funds*100
         # gen_pond = self.master.account.long_acc/self.master.account.max_leverage_funds*100

@@ -128,6 +128,26 @@ class Symbol_combi(object):
                                                                                
         return
     
+    def read_open_orders(self):
+        
+        time = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second)
+
+        for symbol in self.symbol_list:
+            if symbol.side == 'Long':
+                open_orders = self.account.client.get_open_margin_orders(symbol=symbol.tic)
+                
+                for order in open_orders:
+                    new_row = self.account.notifier.tables['open_orders'](Date=str(time), 
+                                                                         Asset = symbol.asset,
+                                                                         Side = order['side'],
+                                                                         Price = float(order['price']),
+                                                                         Quantity = float(order['origQty']),
+                                                                         orderId = order['orderId'])
+                    sql_session.add(new_row)
+        sql_session.commit()
+        
+        return
+    
     def update_open_tr(self):
         
         time = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second)
@@ -141,6 +161,8 @@ class Symbol_combi(object):
         sql_session.execute(restart_symbols)
         # restart_balances = delete(self.account.notifier.tables['balances'])
         # sql_session.execute(restart_balances)
+        restart_open_orders = delete(self.account.notifier.tables['open_orders'])
+        sql_session.execute(restart_open_orders)
 
         try:
             sql_session.commit()
@@ -151,8 +173,7 @@ class Symbol_combi(object):
         
         for symbol in self.symbol_list:
             
-            if symbol.symbol_status:
-
+            try:
                 time = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second)
     
                 try:
@@ -179,7 +200,7 @@ class Symbol_combi(object):
                 
                 new_row = self.account.notifier.tables['open_tr'](Date=str(time), Name=symbol.name, BuyLevel=symbol.buy_level, Amount=round(symbol.asset_acc, 4), Cost=round(symbol.acc), Profit=round(symbol.live_profit*100,2), ProfitUsd=round(symbol.live_profit*symbol.acc,2), Duration=symbol.duration)
                 sql_session.add(new_row)
-
+    
                 # new_values = {'Date': str(time), 'BuyLevel': symbol.buy_level, 'Amount': round(symbol.asset_acc, 4), 'Cost': round(symbol.acc), 'Profit': round(symbol.live_profit * 100, 2), 'ProfitUsd': round(symbol.live_profit * symbol.acc, 2), 'Duration': symbol.duration}            
                 # update_statement = update(self.account.notifier.tables['open_tr']).where(self.account.notifier.tables['open_tr'].c.Name == symbol.name).values(new_values)
                 # sql_session.execute(update_statement)
@@ -220,12 +241,12 @@ class Symbol_combi(object):
                     print(f"Error de conexión a la base de datos: {e}")
                     self.account.notifier.send_error(symbol.name, f"Error de conexión a la base de datos: {e}")
                     sql_session.rollback()
-                
-                
-                # print(symbol.name, 'Acc: ', round(symbol.acc, 2), 'DU: ', symbol.buy_level, 'Profit: ', round(symbol.live_profit*100,2), 'Profit $: ', round(symbol.live_profit*symbol.acc, 2), 'Duration: ', symbol.duration, 'Price: ', price)
-                
-            # print(time, 'SYMBOLS UPDATED')
-            self.account.notifier.register_output('Info', 'general', 'general', 'Symbols updated')
+                                                                    
+            except Exception as e:
+                self.account.notifier.send_error('General', f'SYMBOL UPDATING ERROR: {e}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}')
+             
+        self.read_open_orders()
+        self.account.notifier.register_output('Info', 'general', 'general', 'Symbols updated')
         return
 
 __all__ = ['Symbol_combi']

@@ -13,8 +13,8 @@ class Notifier():
         self.tables = {}
         self.token = '6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4'
         
-        self.eqs = {'gorka':23494, 'aita':40639, 'inaki':15276, 'nacho':1316, 'total':85205}
-        self.parts = {'gorka':63.8, 'aita':23.8, 'inaki':9, 'nacho':0.8}
+        self.eqs = {'gorka':25966, 'aita':41627, 'inaki':15649, 'nacho':1348, 'total':89178}
+        self.parts = {'gorka':63.7, 'aita':23.9, 'inaki':9, 'nacho':0.8}
         self.ids = {'gorka':'-1002116297039', 'aita':'-1001517241898', 'inaki':'-1002079190459', 'nacho':'-1002080234130', 'error':'-1002041194998', 'comms':'-1001966519898', 'general':'-1002023987289'}
         
     def send_order_placed(self, action, symbol, price, amount):
@@ -127,7 +127,6 @@ class Notifier():
     def send_error(self, symbol, error):
         
         message = ('#ERROR' + '\n' + 
-                   'Account: CROSS \n' + 
                    'Symbol: ' + str(symbol) + '\n' + 
                    'Error: ' + error)
         try:  

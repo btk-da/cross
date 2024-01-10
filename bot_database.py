@@ -119,9 +119,7 @@ def init_database(assets, backup):
         __tablename__ = 'open_orders'
         id = Column(Integer, primary_key=True)
         Date = Column(String(50))
-        Name = Column(String(50))
         Asset = Column(String(50))
-        Action = Column(String(50))
         Side = Column(String(50))
         Price = Column(Float)
         Quantity = Column(Float)

@@ -13,7 +13,7 @@ class Notifier():
         self.tables = {}
         self.token = '6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4'
         
-        self.eqs = {'gorka':25951, 'aita':41621, 'inaki':15647, 'nacho':1348, 'total':89154}
+        self.eqs = {'gorka':25971, 'aita':41629, 'inaki':15650, 'nacho':1349, 'total':89185}
         self.parts = {'gorka':63.7, 'aita':23.9, 'inaki':9, 'nacho':0.8}
         self.ids = {'gorka':'-1002116297039', 'aita':'-1001517241898', 'inaki':'-1002079190459', 'nacho':'-1002080234130', 'error':'-1002041194998', 'comms':'-1001966519898', 'general':'-1002023987289'}
         

@@ -178,7 +178,6 @@ def init_database(assets, backup):
         Balance = Column(Float)
         T_balance = Column(Float)
         Loan = Column(Float)
-        T_loan = Column(Float)
     tables['balances'] = Table12
     
     if backup == True:

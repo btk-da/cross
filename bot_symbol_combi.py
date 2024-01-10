@@ -44,6 +44,9 @@ class Symbol_combi(object):
      
         # sql_session.commit()
         self.account.assets = list(set(assets))
+        
+        for asset in self.account.assets:
+            self.account.have_open_order[asset] = {'Long':False, 'Short':False}
         print('Symbols added')
         
         return
@@ -192,30 +195,58 @@ class Symbol_combi(object):
         
         self.account.get_all_balances()
         
-        new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = self.account.base_coin, Balance = self.account.balances[self.account.base_coin], T_balance = self.account.t_balances[self.account.base_coin], Loan = self.account.loans[self.account.base_coin], T_loan = self.account.t_loans[self.account.base_coin])
-        sql_session.add(new_row)
+        # new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = self.account.base_coin, Balance = self.account.balances[self.account.base_coin], T_balance = self.account.t_balances[self.account.base_coin], Loan = self.account.loans[self.account.base_coin], T_loan = self.account.t_loans[self.account.base_coin])
+        # sql_session.add(new_row)
         
-        for asset in self.account.assets:
+        # for asset in self.account.assets:
             
-            price = float(self.account.client.get_symbol_ticker(symbol=asset+self.account.base_coin)['price'])
+        #     price = float(self.account.client.get_symbol_ticker(symbol=asset+self.account.base_coin)['price'])
             
-            if self.account.balances[asset]*price <= 6:
-                balance = 0
+        #     if self.account.balances[asset]*price <= 11:
+        #         balance = 0
+        #     else:
+        #         balance = self.account.balances[asset]
+        #     if self.account.t_balances[asset]*price <= 11:
+        #         t_balance = 0
+        #     else:
+        #         self.account.t_balances[asset]
+        #     if self.account.t_loans[asset]*price <= 11:
+        #         t_loan = 0
+        #     else:
+        #         t_loan = self.account.t_loans[asset]
+        #     new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = asset, Balance = balance, T_balance = t_balance, Loan = self.account.loans[asset], T_loan = t_loan)
+        #     sql_session.add(new_row)
+        # sql_session.commit()
+        self.account.teor_balances = {}
+        
+        for symbol in self.symbol_list:
+            
+            if symbol.side == 'Long':
+                self.account.teor_balances[symbol.asset] = symbol.asset_acc
             else:
-                balance = self.account.balances[asset]
-            if self.account.t_balances[asset]*price <= 6:
-                t_balance = 0
-            else:
-                self.account.round_decimals_down(self.account.t_balances[asset], self.account.amount_precision[asset])
-            if self.account.t_loans[asset]*price <= 6:
-                t_loan = 0
-            else:
-                t_loan = round(self.account.t_loans[asset], self.account.amount_precision[asset])
-            new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = asset, Balance = balance, T_balance = t_balance, Loan = self.account.loans[asset], T_loan = t_loan)
-            sql_session.add(new_row)
+                self.account.teor_balances[symbol.asset] = self.account.teor_balances[symbol.asset] - symbol.asset_acc
+                
+                price = float(self.account.client.get_symbol_ticker(symbol=symbol.tic)['price'])
+                if self.account.balances[symbol.asset]*price <= 8:
+                    asset_balance = 0
+                else:
+                    asset_balance = self.account.balances[symbol.asset]
+                    
+                if abs(self.account.teor_balances[symbol.asset])*price <= 8:
+                    asset_balance_t = 0
+                else:
+                    asset_balance_t = self.account.teor_balances[symbol.asset]
+                    
+                new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = symbol.asset, Balance = asset_balance, T_balance = asset_balance_t, Loan = self.account.loans[symbol.asset])
+                sql_session.add(new_row)
+
         sql_session.commit()
         
-        # self.account.notifier.register_output('Balances updated', 'General', 'General', 'General')
+        if len(self.account.can_check_balance) != 0:
+            self.account.check_balances(self.account.can_check_balance)
+            self.account.can_check_balance = []
+
+                # self.account.notifier.register_output('Balances updated', 'General', 'General', 'General')
             
         return
     

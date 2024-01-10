@@ -589,7 +589,7 @@ class Frontend():
         }
         
         now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second) - timedelta(minutes=3)
-        period = (now - datetime(2024, 1, 2, 10, 0, 0)).total_seconds()/86400
+        period = (now - datetime(2024, 1, 10, 16, 19, 0)).total_seconds()/86400
         #ACTUALIZAR AL INICIO
         
         df_aggregated = df_tr1.groupby('Name').agg(aggregation_functions).reset_index()

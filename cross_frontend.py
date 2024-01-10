@@ -37,7 +37,8 @@ class Frontend():
         self.conn = self.engine.connect()
         self.symbol_names = []
         assets = ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'LTC', 'SOL', 'ATOM', 'BCH', 'DOGE', 'DOT', 'EOS', 'LINK', 
-                  'TRX', 'SHIB', 'AVAX', 'XLM', 'UNI', 'ETC', 'FIL', 'HBAR', 'VET', 'NEAR', 'GRT', 'AAVE', 'DASH', 'MATIC', 'ICP', 'RUNE', 'IMX']
+                  'TRX', 'SHIB', 'AVAX', 'XLM', 'UNI', 'ETC', 'FIL', 'HBAR', 'VET', 'NEAR', 'GRT', 'AAVE', 'DASH', 
+                  'MATIC', 'ICP', 'RUNE', 'IMX', 'OP', 'LDO', 'INJ']
         for i in assets:
             self.symbol_names.append(i + '--L')
             self.symbol_names.append(i + '--S')
@@ -209,7 +210,7 @@ class Frontend():
             showlegend=False,
             title={'text': 'Transactions'},  # Posición del título centrado encima de la tabla
             width=1200,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
-            height=1300  # Altura de la tabla, puedes ajustarlo según tus necesidades
+            height=1400  # Altura de la tabla, puedes ajustarlo según tus necesidades
         )
         
         # Mostrar la tabla en el dashboard de Streamlit
@@ -351,7 +352,7 @@ class Frontend():
             fig.update_layout(xaxis=dict(title='Date'), yaxis=dict(title='Price'), width=1000, height=600)
             fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), margin=dict(t=100, b=100, l=100, r=155))
             
-            df_symbols = pd.read_sql_table('symbols', self.conn)
+            df_symbols = pd.read_sql_table('status', self.conn)
             
             points = [list(action_points['Open_point']), list(action_points['Open_trail_point']), list(action_points['Average_price']), list(action_points['Average_point']), list(action_points['Average_trail_point']), list(action_points['Close_point']), list(action_points['Close_trail_point'])]
             
@@ -394,12 +395,15 @@ class Frontend():
             del df_status['id']
             
             df_status = df_status[df_status['Name'] == option]
+            
+            selected_columns = ['Date', 'Name', 'Drop', 'Profit', 'K', 'Buy_trail', 'Sell_trail', 'Level', 'Pond']
+            df_status_subset = df_status[selected_columns]
 
             fig = go.Figure(data=[go.Table(
-                header=dict(values=list(df_status.columns),
+                header=dict(values=list(df_status_subset.columns),
                             fill_color='paleturquoise',
                             align='left'),
-                cells=dict(values=[df_status[col] for col in df_status.columns],
+                cells=dict(values=[df_status_subset[col] for col in df_status_subset.columns],
                            fill_color='lavender',
                            align='left'))])
             
@@ -409,9 +413,59 @@ class Frontend():
                 plot_bgcolor='white',
                 font=dict(family='Arial', size=12, color='black'),
                 showlegend=False,
-                title={'text': 'Transacciones'},
+                title={'text': 'Symbols'},
                 width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
-                height=200  # Altura de la tabla, puedes ajustarlo según tus necesidades
+                height=50  # Altura de la tabla, puedes ajustarlo según tus necesidades
+            )
+            
+            # Mostrar la tabla en el dashboard de Streamlit
+            st.plotly_chart(fig)
+            
+            selected_columns = ['Date', 'Switch', 'Symbol_status', 'Can_open', 'Can_average', 'Can_close', 'Can_open_trail', 'Can_average_trail', 'Can_close_trail']
+            df_status_subset = df_status[selected_columns]
+
+            fig = go.Figure(data=[go.Table(
+                header=dict(values=list(df_status_subset.columns),
+                            fill_color='paleturquoise',
+                            align='left'),
+                cells=dict(values=[df_status_subset[col] for col in df_status_subset.columns],
+                           fill_color='lavender',
+                           align='left'))])
+            
+            fig.update_layout(
+                margin=dict(l=0, r=0, t=0, b=0),
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                font=dict(family='Arial', size=12, color='black'),
+                showlegend=False,
+                title={'text': 'Status'},
+                width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
+                height=50  # Altura de la tabla, puedes ajustarlo según tus necesidades
+            )
+            
+            # Mostrar la tabla en el dashboard de Streamlit
+            st.plotly_chart(fig)
+            
+            selected_columns = ['Date', 'Open_point', 'Average_point', 'Average_price', 'Close_point', 'Open_trail_point', 'Average_trail_point', 'Close_trail_point']
+            df_status_subset = df_status[selected_columns]
+
+            fig = go.Figure(data=[go.Table(
+                header=dict(values=list(df_status_subset.columns),
+                            fill_color='paleturquoise',
+                            align='left'),
+                cells=dict(values=[df_status_subset[col] for col in df_status_subset.columns],
+                           fill_color='lavender',
+                           align='left'))])
+            
+            fig.update_layout(
+                margin=dict(l=0, r=0, t=0, b=0),
+                paper_bgcolor='white',
+                plot_bgcolor='white',
+                font=dict(family='Arial', size=12, color='black'),
+                showlegend=False,
+                title={'text': 'Trading Points'},
+                width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
+                height=50  # Altura de la tabla, puedes ajustarlo según tus necesidades
             )
             
             # Mostrar la tabla en el dashboard de Streamlit
@@ -421,32 +475,32 @@ class Frontend():
     
     def symbols_page(self):
         
-        # TABLA SYMBOLS
+        # # TABLA SYMBOLS
 
-        df_symbols = pd.read_sql_table('symbols', self.conn)
-        del df_symbols['id']
+        # df_symbols = pd.read_sql_table('status', self.conn)
+        # del df_symbols['id']
         
-        # Crear la tabla de Plotly
-        fig = go.Figure(data=[go.Table(
-            header=dict(values=list(df_symbols.columns),
-                        fill_color='paleturquoise',
-                        align='left'),
-            cells=dict(values=[df_symbols[col] for col in df_symbols.columns],
-                       fill_color='lavender',
-                       align='left'))])
+        # # Crear la tabla de Plotly
+        # fig = go.Figure(data=[go.Table(
+        #     header=dict(values=list(df_symbols.columns),
+        #                 fill_color='paleturquoise',
+        #                 align='left'),
+        #     cells=dict(values=[df_symbols[col] for col in df_symbols.columns],
+        #                fill_color='lavender',
+        #                align='left'))])
         
-        fig.update_layout(
-            margin=dict(l=0, r=0, t=0, b=0),
-            paper_bgcolor='white',
-            plot_bgcolor='white',
-            font=dict(family='Arial', size=12, color='black'),
-            showlegend=False,
-            title={'text': 'Symbols'},
-            width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
-            height=200  # Altura de la tabla, puedes ajustarlo según tus necesidades
-        )
+        # fig.update_layout(
+        #     margin=dict(l=0, r=0, t=0, b=0),
+        #     paper_bgcolor='white',
+        #     plot_bgcolor='white',
+        #     font=dict(family='Arial', size=12, color='black'),
+        #     showlegend=False,
+        #     title={'text': 'Status'},
+        #     width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
+        #     height=200  # Altura de la tabla, puedes ajustarlo según tus necesidades
+        # )
         
-        st.plotly_chart(fig)
+        # st.plotly_chart(fig)
         
         # SWITCH SYMBOLS
         symbol_side = st.selectbox("Select Symbol", ['All', 'Long', 'Short'])
@@ -592,7 +646,7 @@ class Frontend():
         
         st.plotly_chart(fig)
         
-        df_tr = df_tr.sort_values(by='id', ascending=False)  
+        df_tr = df_tr.sort_values(by='ProfitUsd', ascending=False)  
         df_tr = df_tr.head(10)
         df_tr['Profit'] = df_tr['Profit'].round(2)
         df_tr['ProfitUsd'] = df_tr['ProfitUsd'].round(2)
@@ -623,73 +677,33 @@ class Frontend():
         st.plotly_chart(fig)
         return
    
-    def leverage_page(self):
+    def balances_page(self):
     
-        df_lev = pd.read_sql_table('funds', self.conn, parse_dates=['Date'])
-        general_leverage = df_lev.iloc[-1]['Funds']
-        long_leverage = df_lev.iloc[-1]['Long_funds']
-        short_leverage = -df_lev.iloc[-1]['Short_funds']    
+        df_balances = pd.read_sql_table('balances', self.conn)
+        del df_balances['id']
         
-        # Creamos una figura con tres subplots en una fila
-        fig_leverage = make_subplots(rows=1, cols=3, subplot_titles=("General Leverage", "Long Leverage", "Short Leverage"))
-        
-        # Agregamos las tres barras en los subplots correspondientes
-        fig_leverage.add_trace(go.Bar(x=[0], y=[general_leverage], orientation='v', marker=dict(color='yellow'), width=0.5), row=1, col=1)
-        fig_leverage.add_trace(go.Bar(x=[0], y=[long_leverage], orientation='v', marker=dict(color='green'), width=0.5), row=1, col=2)
-        fig_leverage.add_trace(go.Bar(x=[0], y=[short_leverage], orientation='v', marker=dict(color='red'), width=0.5), row=1, col=3)
-        
-        y_range = [-100, 100]
-        # Configuramos el diseño de los subplots
-        for i in range(2, 4):  # Iterar sobre los tres subplots
-            fig_leverage.update_yaxes(range=y_range, row=1, col=i)  # Establecer el rango en el eje y para cada subplot
-            fig_leverage.update_xaxes(showticklabels=False, row=1, col=i)  # Ocultar las etiquetas del eje x
-    
-        # Configuramos el diseño de los subplots
-        fig_leverage.update_layout(
-            xaxis=dict(showticklabels=False),
-            yaxis=dict(title='Leverage', range=y_range),
-            showlegend=False,
-            height=400,
-            width=800,  # Aumentamos el ancho total para alojar las tres gráficas
-            margin=dict(l=50, r=50, t=50, b=50),
-            paper_bgcolor='white',
-            plot_bgcolor='white',
-        )
-        
-        # Ajustamos el tamaño del recuadro al tamaño del gráfico
-        st.plotly_chart(fig_leverage, use_container_width=True)
-        
-        # TABLA OUTPUT
-        
-        st.write("<h3 style='text-align: center;'>OUTPUT</h3>", unsafe_allow_html=True)
-    
-        df_tr = pd.read_sql_table('output', self.conn, parse_dates=['Date'])
-        df_tr = df_tr.drop(columns='id')
-        df_tr = df_tr.sort_values(by='Date', ascending=False)
-        df_tr['Date'] = df_tr['Date'].dt.strftime('%d/%m %H:%M:%S')
-    
         # Crear la tabla de Plotly
         fig = go.Figure(data=[go.Table(
-            header=dict(values=list(df_tr.columns),
+            header=dict(values=list(df_balances.columns),
                         fill_color='paleturquoise',
                         align='left'),
-            cells=dict(values=[df_tr[col] for col in df_tr.columns],
+            cells=dict(values=[df_balances[col] for col in df_balances.columns],
                        fill_color='lavender',
                        align='left'))])
-    
+        
         fig.update_layout(
             margin=dict(l=0, r=0, t=0, b=0),
             paper_bgcolor='white',
             plot_bgcolor='white',
             font=dict(family='Arial', size=12, color='black'),
             showlegend=False,
-            title={'text': 'Output'},
-            width=1400,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
-            height=400  # Altura de la tabla, puedes ajustarlo según tus necesidades
+            title={'text': 'Status'},
+            width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
+            height=1000  # Altura de la tabla, puedes ajustarlo según tus necesidades
         )
-    
-        # Mostrar la tabla en el dashboard de Streamlit
+        
         st.plotly_chart(fig)
+    
         return
     
     def margin_page(self):
@@ -772,7 +786,7 @@ button_1 = st.sidebar.button("OPEN TRANSACTIONS")
 button_2 = st.sidebar.button("LIVE")
 button_3 = st.sidebar.button("SYMBOLS")
 button_4 = st.sidebar.button("TRANSACTION HISTORY")
-# button_5 = st.sidebar.button("LEVERAGE")
+button_5 = st.sidebar.button("BALANCES")
 button_6 = st.sidebar.button("NAV")
 
 if 'button_1' not in st.session_state:
@@ -787,8 +801,8 @@ if 'button_3' not in st.session_state:
 if 'button_4' not in st.session_state:
     st.session_state.button_4 = False
 
-# if 'button_5' not in st.session_state:
-#     st.session_state.button_5 = False
+if 'button_5' not in st.session_state:
+    st.session_state.button_5 = False
 
 if 'button_6' not in st.session_state:
     st.session_state.button_6 = False
@@ -797,42 +811,42 @@ if 'button_6' not in st.session_state:
 
 if button_6:
     st.session_state.button_6 = True
-    # st.session_state.button_5 = False
+    st.session_state.button_5 = False
     st.session_state.button_4 = False
     st.session_state.button_3 = False
     st.session_state.button_2 = False
     st.session_state.button_1 = False
-# elif button_5:
-#     st.session_state.button_6 = False
-#     # st.session_state.button_5 = True
-#     st.session_state.button_4 = False
-#     st.session_state.button_3 = False
-#     st.session_state.button_2 = False
-#     st.session_state.button_1 = False
+elif button_5:
+    st.session_state.button_6 = False
+    st.session_state.button_5 = True
+    st.session_state.button_4 = False
+    st.session_state.button_3 = False
+    st.session_state.button_2 = False
+    st.session_state.button_1 = False
 elif button_4:
     st.session_state.button_6 = False
-    # st.session_state.button_5 = False
+    st.session_state.button_5 = False
     st.session_state.button_4 = True
     st.session_state.button_3 = False
     st.session_state.button_2 = False
     st.session_state.button_1 = False
 elif button_3:
     st.session_state.button_6 = False
-    # st.session_state.button_5 = False
+    st.session_state.button_5 = False
     st.session_state.button_4 = False
     st.session_state.button_3 = True
     st.session_state.button_2 = False
     st.session_state.button_1 = False
 elif button_2:
     st.session_state.button_6 = False
-    # st.session_state.button_5 = False
+    st.session_state.button_5 = False
     st.session_state.button_4 = False
     st.session_state.button_3 = False
     st.session_state.button_2 = True
     st.session_state.button_1 = False
 elif button_1:
     st.session_state.button_6 = False
-    # st.session_state.button_5 = False
+    st.session_state.button_5 = False
     st.session_state.button_4 = False
     st.session_state.button_3 = False
     st.session_state.button_2 = False
@@ -840,8 +854,8 @@ elif button_1:
 
 if st.session_state.button_6:
     dashboard.margin_page()
-# elif st.session_state.button_5:
-#     dashboard.leverage_page()
+elif st.session_state.button_5:
+    dashboard.balances_page()
 elif st.session_state.button_4:
     dashboard.transactions_page()
 elif st.session_state.button_3:

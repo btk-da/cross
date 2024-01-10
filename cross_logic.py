@@ -84,7 +84,13 @@ inputs = [{'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail
           {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'RUNE'},
           {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'RUNE'},
           {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'IMX'},
-          {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'IMX'}]
+          {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'IMX'},
+          {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'OP'},
+          {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'OP'},
+          {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'LDO'},
+          {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'LDO'},
+          {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'INJ'},
+          {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'INJ'}]
 
 
 assets = []
@@ -142,9 +148,7 @@ if __name__ == '__main__':
         
         if master.engine_working == True:
         
-            try:
-                master.update_open_tr()
-                
+            try:                
                 symbols_backup = {}
                 for symbol in master.symbol_list:
                     symbols_backup[symbol.name] = copy.deepcopy(symbol.__dict__)
@@ -152,6 +156,8 @@ if __name__ == '__main__':
     
                 with open("symbols.pickle", "wb") as f:
                     pickle.dump(symbols_backup, f)
+                    
+                master.update_open_tr()
                 
             except BinanceAPIException as e:
                 master.account.notifier.send_error('General', f'Binance API error: {e}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}')
@@ -255,12 +261,12 @@ if __name__ == '__main__':
                                         i.switch = True
                                         requests.post(url, data={'chat_id': '-1001802125737', 'text':  i.name + 'turned  ' + str(i.switch), 'parse_mode': 'HTML'})
 
-                        restart_symbols = delete(master.account.notifier.tables['symbols'])
-                        sql_session.execute(restart_symbols)
-                        for symbol in master.symbol_list:
-                            new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.symbol_status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
-                            sql_session.add(new_row)
-                        sql_session.commit()
+                        # restart_symbols = delete(master.account.notifier.tables['symbols'])
+                        # sql_session.execute(restart_symbols)
+                        # for symbol in master.symbol_list:
+                        #     new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.symbol_status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
+                        #     sql_session.add(new_row)
+                        # sql_session.commit()
     
                         master.engine_working = True
                         requests.post(url, data={'chat_id': '-1001802125737', 'text': 'Engine started (switch)', 'parse_mode': 'HTML'})
@@ -315,13 +321,13 @@ if __name__ == '__main__':
                             warn = 'Changed completed ' + 'Symbol: ' + selected_symbol.name + 'Param: ' + str(attribute_name) + 'New Value: ' + str(edit_params['value'])
                             requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
 
-                        restart_symbols = delete(master.account.notifier.tables['symbols'])
-                        sql_session.execute(restart_symbols)
-                        for symbol in master.symbol_list:
-                            symbol.trading_points()
-                            new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.symbol_status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
-                            sql_session.add(new_row)
-                        sql_session.commit()                    
+                        # restart_symbols = delete(master.account.notifier.tables['symbols'])
+                        # sql_session.execute(restart_symbols)
+                        # for symbol in master.symbol_list:
+                        #     symbol.trading_points()
+                        #     new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.symbol_status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
+                        #     sql_session.add(new_row)
+                        # sql_session.commit()                    
         
                         master.engine_working = True
                         requests.post(url, data={'chat_id': '-1001802125737', 'text':  'Engine started (edit)', 'parse_mode': 'HTML'})
@@ -344,12 +350,12 @@ if __name__ == '__main__':
 
                         master.add_new_symbol(add_symbol_params)
     
-                        restart_symbols = delete(master.account.notifier.tables['symbols'])
-                        sql_session.execute(restart_symbols)
-                        for symbol in master.symbol_list:
-                            new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.symbol_status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
-                            sql_session.add(new_row)
-                        sql_session.commit()      
+                        # restart_symbols = delete(master.account.notifier.tables['symbols'])
+                        # sql_session.execute(restart_symbols)
+                        # for symbol in master.symbol_list:
+                        #     new_row = master.account.notifier.tables['symbols'](Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.symbol_status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail)
+                        #     sql_session.add(new_row)
+                        # sql_session.commit()      
     
                         requests.post(url, data={'chat_id': '-1001802125737', 'text': 'New symbol added', 'parse_mode': 'HTML'})
                         master.engine_working = True

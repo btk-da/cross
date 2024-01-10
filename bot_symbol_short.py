@@ -33,7 +33,7 @@ class Symbol_short(object):
         self.can_average_trail = False
         self.can_close_trail = False
         
-        self.open_price = []
+        self.open_price = 0
         self.open_time = []
         self.close_time = []
         self.duration = '0'
@@ -85,10 +85,6 @@ class Symbol_short(object):
                 elif open_order['status'] == 'NEW':
                     cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
                     if cancel['status'] == 'CANCELED':
-                        order_id_to_delete = self.open_order_id['orderId']
-                        delete_statement = delete(self.master.account.notifier.tables['open_orders']).where(self.master.account.notifier.tables['open_orders'].orderId == order_id_to_delete)
-                        sql_session.execute(delete_statement)
-                        sql_session.commit()
                         self.open_order_id = []
                         buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
                         check = self.master.account.create_sell_order(self, buy_amount/self.open_trail_point, self.open_trail_point, 'OPEN', price)
@@ -96,10 +92,6 @@ class Symbol_short(object):
                 elif open_order['status'] == 'PARTIALLY FILLED':
                     cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
                     if cancel['status'] == 'CANCELED':
-                        order_id_to_delete = self.open_order_id['orderId']
-                        delete_statement = delete(self.master.account.notifier.tables['open_orders']).where(self.master.account.notifier.tables['open_orders'].orderId == order_id_to_delete)
-                        sql_session.execute(delete_statement)
-                        sql_session.commit()
                         self.open_order_id = []
                         partial_amount, partial_price = self.master.account.check_partial_order(self)
                         
@@ -187,10 +179,6 @@ class Symbol_short(object):
                 elif open_order['status'] == 'NEW':
                     cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
                     if cancel['status'] == 'CANCELED':
-                        order_id_to_delete = self.open_order_id['orderId']
-                        delete_statement = delete(self.master.account.notifier.tables['open_orders']).where(self.master.account.notifier.tables['open_orders'].orderId == order_id_to_delete)
-                        sql_session.execute(delete_statement)
-                        sql_session.commit()
                         self.open_order_id = []
                         buy_amount = self.calculate_interp()
                         check = self.master.account.create_sell_order(self, buy_amount/self.average_trail_point, self.average_trail_point, 'AVERAGE', price)
@@ -198,10 +186,6 @@ class Symbol_short(object):
                 elif open_order['status'] == 'PARTIALLY FILLED':
                     cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
                     if cancel['status'] == 'CANCELED':
-                        order_id_to_delete = self.open_order_id['orderId']
-                        delete_statement = delete(self.master.account.notifier.tables['open_orders']).where(self.master.account.notifier.tables['open_orders'].orderId == order_id_to_delete)
-                        sql_session.execute(delete_statement)
-                        sql_session.commit()
                         self.open_order_id = []
                         partial_amount, partial_price = self.master.account.check_partial_order(self)
                         
@@ -288,20 +272,12 @@ class Symbol_short(object):
                 elif open_order['status'] == 'NEW':
                     cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
                     if cancel['status'] == 'CANCELED':
-                        order_id_to_delete = self.open_order_id['orderId']
-                        delete_statement = delete(self.master.account.notifier.tables['open_orders']).where(self.master.account.notifier.tables['open_orders'].orderId == order_id_to_delete)
-                        sql_session.execute(delete_statement)
-                        sql_session.commit()
                         self.open_order_id = []
                         check = self.master.account.create_buy_order(self, self.asset_acc, self.close_trail_point, 'CLOSE', price)
     
                 elif open_order['status'] == 'PARTIALLY FILLED':
                     cancel = self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=open_order['orderId'])
                     if cancel['status'] == 'CANCELED':
-                        order_id_to_delete = self.open_order_id['orderId']
-                        delete_statement = delete(self.master.account.notifier.tables['open_orders']).where(self.master.account.notifier.tables['open_orders'].orderId == order_id_to_delete)
-                        sql_session.execute(delete_statement)
-                        sql_session.commit()
                         self.open_order_id = []
                         partial_amount, partial_price = self.master.account.check_partial_order(self)
                         

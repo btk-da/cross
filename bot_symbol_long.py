@@ -46,7 +46,7 @@ class Symbol_long(object):
         self.average_point = 0.0000000001
         self.close_point = 1000000000
         self.buy_level = 0
-        self.price = []
+        self.price = 0
         self.live_profit = 0
         
         self.base_open_trail = 0
@@ -355,7 +355,7 @@ class Symbol_long(object):
 
     def logic(self, time, price):
 
-        if self.status:
+        if self.status == True:
             self.live_profit = (price/self.average_price - 1)
             self.duration = time - self.open_time
 
@@ -364,10 +364,10 @@ class Symbol_long(object):
             if open_order['status'] == 'FILLED':
                 self.master.account.check_filled_order(self)
 
-        if self.can_open_trail:
+        if self.can_open_trail == True:
             self.open_trailing(time, price)
             
-        if self.can_open and self.switch:
+        if self.can_open == True and self.switch == True:
             if self.master.wr_list[self.nick]['Short'] >= self.level and self.master.wr_list[self.nick]['Short'] > self.master.wr_list[self.nick]['Long']:
                 self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64') * self.pond
             else:
@@ -379,18 +379,19 @@ class Symbol_long(object):
             self.open_trail_point = self.base_open_trail*(1 + self.buy_trail/100)
             buy_amount = np.interp(0, self.interp_range, self.buy_distribution)
             check = self.master.account.create_buy_order(self, buy_amount/self.open_trail_point, self.open_trail_point, 'OPEN', price)
-            if check:
+            if check == True:
                 self.can_open_trail = True
                 self.can_open = False
                 self.master.account.notifier.send_order_placed('OPEN', self, self.open_trail_point, buy_amount/self.open_trail_point)
             else:
                 self.can_open_trail = False
                 self.can_open = True
+                self.master.account.notifier.send_order_check_fail(self, 'OPEN')
                 
-        if self.can_average_trail:
+        if self.can_average_trail == True:
             self.average_trailing(time, price)
             
-        if price < self.average_point and self.can_average:
+        if price < self.average_point and self.can_average == True:
 
             if len(self.open_order_id) != 0:
                 self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=self.open_order_id['orderId'])
@@ -398,7 +399,7 @@ class Symbol_long(object):
             self.average_trail_point = self.base_average_trail*(1 + self.buy_trail/100)
             buy_amount = self.calculate_interp()              
             check = self.master.account.create_buy_order(self, buy_amount/self.average_trail_point, self.average_trail_point, 'AVERAGE', price)
-            if check:
+            if check == True:
                 self.can_average_trail = True
                 self.can_average = False
                 self.can_close_trail = False
@@ -409,18 +410,19 @@ class Symbol_long(object):
                 self.can_average = True
                 self.can_close_trail = False
                 self.can_close = True
-
-        if self.can_close_trail:
+                self.master.account.notifier.send_order_check_fail(self, 'AVERAGE')
+        
+        if self.can_close_trail == True:
             self.close_trailing(time, price)
             
-        if price > self.close_point and self.can_close:
+        if price > self.close_point and self.can_close == True:
             
             if len(self.open_order_id) != 0:
                 self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=self.open_order_id['orderId'])
             self.base_close_trail = price
             self.close_trail_point = self.base_close_trail*(1 - self.sell_trail/100)
             check = self.master.account.create_sell_order(self, self.asset_acc, self.close_trail_point, 'CLOSE', price)
-            if check:
+            if check == True:
                 self.can_average_trail = False
                 self.can_average = True
                 self.can_close_trail = True
@@ -431,6 +433,7 @@ class Symbol_long(object):
                 self.can_average = True
                 self.can_close_trail = False
                 self.can_close = True          
+                self.master.account.notifier.send_order_check_fail(self, 'CLOSE')
                   
         return
     

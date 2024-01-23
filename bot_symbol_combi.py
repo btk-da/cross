@@ -39,10 +39,6 @@ class Symbol_combi(object):
             self.symbol_list.append(symbol)
             self.account.notifier.register_output('Info', symbol.asset, symbol.side, 'Symbols added')
 
-            # new_row = self.account.notifier.tables['status'](Date='0', Name=symbol.name, Drop=symbol.drop, Profit=symbol.profit, K=symbol.k, Buy_trail=symbol.buy_trail, Sell_trail=symbol.sell_trail, Level=symbol.level, Pond=symbol.pond, Switch=symbol.switch, Symbol_status=symbol.status, Can_open=symbol.can_open, Can_average=symbol.can_average, Can_close=symbol.can_close, Can_open_trail=symbol.can_open_trail, Can_average_trail=symbol.can_average_trail, Can_close_trail=symbol.can_close_trail, Open_point=symbol.open_price, Average_point=symbol.average_point, Average_price=symbol.average_price, Close_point=symbol.close_point, Open_trail_point=symbol.open_trail_point, Average_trail_point=symbol.average_trail_point, Close_trail_point=symbol.close_trail_point)
-            # sql_session.add(new_row)
-     
-        # sql_session.commit()
         self.account.assets = list(set(assets))
         
         for asset in self.account.assets:
@@ -136,6 +132,8 @@ class Symbol_combi(object):
         
         restart_open_orders = delete(self.account.notifier.tables['open_orders'])
         sql_session.execute(restart_open_orders)
+        # restart_open_order_bool = delete(self.account.notifier.tables['open_order_bool'])
+        # sql_session.execute(restart_open_order_bool)
         sql_session.commit()
         
         time = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second)
@@ -147,10 +145,12 @@ class Symbol_combi(object):
                 for order in open_orders:
                     new_row = self.account.notifier.tables['open_orders'](Date=str(time), Asset=symbol.asset, Side=order['side'], Price=float(order['price']), Quantity = float(order['origQty']), orderId = order['orderId'])
                     sql_session.add(new_row)
+        
+        # for i in self.account.have_open_order:
+        #     new_row = self.account.notifier.tables['open_order_bool'](Date=str(time), Asset=i, Long=self.account.have_open_order[i]['Long'], Short=self.account.have_open_order[i]['Short'])
+        #     sql_session.add(new_row)
+            
         sql_session.commit()
-        # self.account.notifier.register_output('Open orders recorded', 'General', 'General', 'General')
-        # self.update_symbol_status(time)
-        # self.account.notifier.register_output('Symbol status updated', 'General', 'General', 'General')
         
         return
     
@@ -163,23 +163,19 @@ class Symbol_combi(object):
         restart_open_tr = delete(self.account.notifier.tables['open_tr'])
         sql_session.execute(restart_open_tr)
         sql_session.commit()
-        # self.account.notifier.register_output('Symbol status and open_tr deleted', 'General', 'General', 'General')
 
         with open("symbols.pickle", "rb") as f:
             symbols_backup = pickle.load(f)
             
         for name in symbols_backup.keys():
             symbol = symbols_backup[name]
-            new_row = self.account.notifier.tables['status'](Date=str(time), Name=symbol['name'], Drop=symbol['drop'], Profit=symbol['profit'], K=symbol['k'], Buy_trail=symbol['buy_trail'], Sell_trail=symbol['sell_trail'], Level=symbol['level'], Pond=symbol['pond'], Switch=symbol['switch'], Symbol_status=symbol['status'], Can_open=symbol['can_open'], Can_average=symbol['can_average'], Can_close=symbol['can_close'], Can_open_trail=symbol['can_open_trail'], Can_average_trail=symbol['can_average_trail'], Can_close_trail=symbol['can_close_trail'], Open_point=symbol['open_price'], Average_point=symbol['average_point'], Average_price=symbol['average_price'], Close_point=symbol['close_point'], Open_trail_point=symbol['open_trail_point'], Average_trail_point=symbol['average_trail_point'], Close_trail_point=symbol['close_trail_point'])
+            new_row = self.account.notifier.tables['status'](Date=str(time), Name=symbol['name'], Drop=symbol['drop'], Profit=symbol['profit'], K=symbol['k'], Buy_trail=symbol['buy_trail'], Sell_trail=symbol['sell_trail'], Level=symbol['level'], Pond=symbol['pond'], Switch=symbol['switch'], Symbol_status=symbol['status'], Can_open=symbol['can_open'], Can_average=symbol['can_average'], Can_close=symbol['can_close'], Can_open_trail=symbol['can_open_trail'], Can_average_trail=symbol['can_average_trail'], Can_close_trail=symbol['can_close_trail'], Price=symbol['price'], Open_point=symbol['open_price'], Average_point=symbol['average_point'], Average_price=symbol['average_price'], Close_point=symbol['close_point'], Open_trail_point=symbol['open_trail_point'], Average_trail_point=symbol['average_trail_point'], Close_trail_point=symbol['close_trail_point'])
             sql_session.add(new_row)
             new_row = self.account.notifier.tables['open_tr'](Date=str(time), Name=symbol['name'], BuyLevel=symbol['buy_level'], Amount=round(symbol['asset_acc'], 4), Cost=round(symbol['acc']), Profit=round(symbol['live_profit']*100, 2), ProfitUsd=round(symbol['live_profit']*symbol['acc'], 2), Duration=symbol['duration'])
             sql_session.add(new_row)
-            # self.account.notifier.register_output('Symbol status and open_tr updated', 'General', 'General', name)
                         
         try:
             sql_session.commit()
-            # self.account.notifier.register_output('Symbol status and open_tr updated', 'General', 'General', 'General')
-
         except exc.OperationalError as e:
             self.account.notifier.send_error(symbol.name, f"Error de conexión a la base de datos: {e}")
             sql_session.rollback()
@@ -194,29 +190,6 @@ class Symbol_combi(object):
         sql_session.commit()
         
         self.account.get_all_balances()
-        
-        # new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = self.account.base_coin, Balance = self.account.balances[self.account.base_coin], T_balance = self.account.t_balances[self.account.base_coin], Loan = self.account.loans[self.account.base_coin], T_loan = self.account.t_loans[self.account.base_coin])
-        # sql_session.add(new_row)
-        
-        # for asset in self.account.assets:
-            
-        #     price = float(self.account.client.get_symbol_ticker(symbol=asset+self.account.base_coin)['price'])
-            
-        #     if self.account.balances[asset]*price <= 11:
-        #         balance = 0
-        #     else:
-        #         balance = self.account.balances[asset]
-        #     if self.account.t_balances[asset]*price <= 11:
-        #         t_balance = 0
-        #     else:
-        #         self.account.t_balances[asset]
-        #     if self.account.t_loans[asset]*price <= 11:
-        #         t_loan = 0
-        #     else:
-        #         t_loan = self.account.t_loans[asset]
-        #     new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = asset, Balance = balance, T_balance = t_balance, Loan = self.account.loans[asset], T_loan = t_loan)
-        #     sql_session.add(new_row)
-        # sql_session.commit()
         self.account.teor_balances = {}
         
         for symbol in self.symbol_list:
@@ -236,8 +209,20 @@ class Symbol_combi(object):
                     asset_balance_t = 0
                 else:
                     asset_balance_t = self.account.teor_balances[symbol.asset]
+                
+                if asset_balance_t > 0:
+                    diff = abs(asset_balance_t - asset_balance)
+                    diff_usdt = diff * price
+                else:
+                    diff = abs(abs(asset_balance_t) - self.account.loans[symbol.asset])
+                    diff_usdt = diff * price
+                 
+                if diff_usdt >= 10:
+                    open_orders = self.account.client.get_open_margin_orders(symbol=symbol.tic)
+                    if len(open_orders) == 0 and self.account.have_open_order[symbol.asset]['Long'] == False and self.account.have_open_order[symbol.asset]['Short'] == False:
+                        self.account.notifier.send_error('Check balance', f"Correccion de balances: Symbol: {symbol.name}, Diff: {diff_usdt}")
                     
-                new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = symbol.asset, Balance = asset_balance, T_balance = asset_balance_t, Loan = self.account.loans[symbol.asset])
+                new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = symbol.asset, Balance = asset_balance, T_balance = asset_balance_t, Loan = self.account.loans[symbol.asset], Diff_usdt = round(diff_usdt), Diff = diff, Price = price, Long = self.account.have_open_order[symbol.asset]['Long'], Short = self.account.have_open_order[symbol.asset]['Short'])
                 sql_session.add(new_row)
 
         sql_session.commit()
@@ -245,8 +230,6 @@ class Symbol_combi(object):
         if len(self.account.can_check_balance) != 0:
             self.account.check_balances(self.account.can_check_balance)
             self.account.can_check_balance = []
-
-                # self.account.notifier.register_output('Balances updated', 'General', 'General', 'General')
             
         return
     
@@ -255,25 +238,10 @@ class Symbol_combi(object):
         time = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second)
         self.account.calculate_nav(time)
         
-        # restart_open_tr = delete(self.account.notifier.tables['open_tr'])
-        # sql_session.execute(restart_open_tr)
-        # restart_status = delete(self.account.notifier.tables['status'])
-        # sql_session.execute(restart_status)
-        # restart_symbols = delete(self.account.notifier.tables['symbols'])
-        # sql_session.execute(restart_symbols)
-        # restart_balances = delete(self.account.notifier.tables['balances'])
-        # sql_session.execute(restart_balances)
-        # restart_open_orders = delete(self.account.notifier.tables['open_orders'])
-        # sql_session.execute(restart_open_orders)
-        # try:
-        #     sql_session.commit()
-        # except exc.OperationalError as e:
-        #     print(f"Error de conexión a la base de datos: {e}")
-        #     self.account.notifier.send_error('Restarting database tables', f"Error de conexión a la base de datos: {e}")
-        #     sql_session.rollback()
-        
         for symbol in self.symbol_list:
             
+            self.account.notifier.register_output('Update start', symbol.asset, symbol.name, 'Symbols first update try')
+
             try:
                 time = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second)
     
@@ -293,51 +261,13 @@ class Symbol_combi(object):
             
                 new_row = self.account.notifier.tables[str(symbol.asset)](Date=str(time), Price=price)
                 sql_session.add(new_row)
-                try:
-                    sql_session.commit()
-                except exc.OperationalError as e:
-                    print(f"Error de conexión a la base de datos: {e}")
-                    self.account.notifier.send_error(symbol.name, f"Error de conexión a la base de datos: {e}")
-                    sql_session.rollback()
-                
+                sql_session.commit()
+                self.account.notifier.register_output('Update pre logic', symbol.asset, symbol.name, 'Symbols pre logic try')
+
                 symbol.logic(time, price)
                 
                 self.account.notifier.register_output('Update', symbol.asset, symbol.name, 'Symbols Updated')
                 
-                # new_row = self.account.notifier.tables['open_tr'](Date=str(time), Name=symbol.name, BuyLevel=symbol.buy_level, Amount=round(symbol.asset_acc, 4), Cost=round(symbol.acc), Profit=round(symbol.live_profit*100,2), ProfitUsd=round(symbol.live_profit*symbol.acc,2), Duration=symbol.duration)
-                # sql_session.add(new_row)
-    
-                # new_values = {'Date': str(time), 'BuyLevel': symbol.buy_level, 'Amount': round(symbol.asset_acc, 4), 'Cost': round(symbol.acc), 'Profit': round(symbol.live_profit * 100, 2), 'ProfitUsd': round(symbol.live_profit * symbol.acc, 2), 'Duration': symbol.duration}            
-                # update_statement = update(self.account.notifier.tables['open_tr']).where(self.account.notifier.tables['open_tr'].c.Name == symbol.name).values(new_values)
-                # sql_session.execute(update_statement)
-               
-                # new_row = self.account.notifier.tables['status'](Date=str(time), 
-                #                                                  Name=symbol.name,
-                #                                                  Drop=symbol.drop,
-                #                                                  Profit=symbol.profit, 
-                #                                                  K=symbol.k, 
-                #                                                  Buy_trail=symbol.buy_trail,
-                #                                                  Sell_trail=symbol.sell_trail, 
-                #                                                  Level=symbol.level, 
-                #                                                  Pond=symbol.pond,
-                #                                                  Switch=symbol.switch,
-                #                                                  Symbol_status=symbol.status,
-                #                                                  Can_open=symbol.can_open, 
-                #                                                  Can_average=symbol.can_average,
-                #                                                  Can_close=symbol.can_close,
-                #                                                  Can_open_trail=symbol.can_open_trail,
-                #                                                  Can_average_trail=symbol.can_average_trail,
-                #                                                  Can_close_trail=symbol.can_close_trail,
-                #                                                  Price=price,
-                #                                                  Open_point=symbol.open_price,
-                #                                                  Average_point=symbol.average_point, 
-                #                                                  Average_price=symbol.average_price, 
-                #                                                  Close_point=symbol.close_point,
-                #                                                  Open_trail_point=symbol.open_trail_point,
-                #                                                  Average_trail_point=symbol.average_trail_point,
-                #                                                  Close_trail_point=symbol.close_trail_point)
-                # sql_session.add(new_row)
-                                                                    
             except Exception as e:
                 self.account.notifier.send_error('General', f'SYMBOL UPDATING ERROR: {e}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}')
              

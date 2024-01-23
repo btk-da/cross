@@ -56,6 +56,7 @@ def init_database(assets, backup):
         Can_open_trail = Column(String(50))
         Can_average_trail = Column(String(50))
         Can_close_trail = Column(String(50))
+        Price = Column(Float)
         Open_point = Column(Float)
         Average_point = Column(Float)
         Average_price = Column(Float)
@@ -140,27 +141,6 @@ def init_database(assets, backup):
         orderId = Column(Float)
     tables['open_orders'] = Table9
 
-    # class Table10(sql_base):
-    #     __tablename__ = 'symbols'
-    #     id = Column(Integer, primary_key=True)
-    #     Name = Column(String(50))
-    #     Drop = Column(Float)
-    #     Profit = Column(Float)
-    #     K = Column(Float)
-    #     Buy_trail = Column(Float)
-    #     Sell_trail = Column(Float)
-    #     Level = Column(Float)
-    #     Pond = Column(Float)
-    #     Switch = Column(String(50))
-    #     Symbol_status = Column(String(50))
-    #     Can_open = Column(String(50))
-    #     Can_average = Column(String(50))
-    #     Can_close = Column(String(50))
-    #     Can_open_trail = Column(String(50))
-    #     Can_average_trail = Column(String(50))
-    #     Can_close_trail = Column(String(50))
-    # tables['symbols'] = Table10
-    
     class Table11(sql_base):
         __tablename__ = 'ponderation'
         id = Column(Integer, primary_key=True)
@@ -178,7 +158,21 @@ def init_database(assets, backup):
         Balance = Column(Float)
         T_balance = Column(Float)
         Loan = Column(Float)
+        Diff_usdt = Column(Float)
+        Diff = Column(Float)
+        Price = Column(Float)
+        Long = Column(String(50))
+        Short = Column(String(50))
     tables['balances'] = Table12
+    
+    # class Table13(sql_base):
+    #     __tablename__ = 'open_order_bool'
+    #     id = Column(Integer, primary_key=True)
+    #     Date = Column(String(50))
+    #     Asset = Column(String(50))
+    #     Long = Column(String(50))
+    #     Short = Column(String(50))
+    # tables['open_order_bool'] = Table13
     
     if backup == True:
         print('database charged')

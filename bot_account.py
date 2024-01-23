@@ -40,7 +40,7 @@ class Margin_account():
         self.price_precision = {'BTC':2, 'ETH':2, 'BNB':1, 'XRP':4, 'ADA':4, 'LTC':2, 'SOL':2, 'ATOM':3, 'BCH':1, 
                                 'DOGE':5, 'DOT':3, 'EOS':3, 'LINK':3, 'TRX':5, 'SHIB':8, 'AVAX':2, 'XLM':4, 'UNI':3, 
                                 'ETC':2, 'FIL':3, 'HBAR':4, 'VET':5, 'NEAR':3, 'GRT':4, 'AAVE':2, 'DASH':2, 'MATIC':4, 
-                                'ICP':3 , 'RUNE':3, 'IMX':4, 'OP':3, 'LDO':3, 'INJ':3, 'USDT':2}
+                                'ICP':3 , 'RUNE':3, 'IMX':4, 'OP':3, 'LDO':3, 'INJ':2, 'USDT':2}
         self.amount_precision = {'BTC':5, 'ETH':4, 'BNB':3, 'XRP':0, 'ADA':1, 'LTC':3, 'SOL':2, 'ATOM':2, 'BCH':3,
                                 'DOGE':0, 'DOT':2, 'EOS':1, 'LINK':2, 'TRX':1, 'SHIB':0, 'AVAX':2, 'XLM':0, 'UNI':2, 
                                 'ETC':2, 'FIL':2, 'HBAR':0, 'VET':1, 'NEAR':1, 'GRT':0, 'AAVE':3, 'DASH':3, 'MATIC':1, 
@@ -105,8 +105,8 @@ class Margin_account():
             diff_usd = round(abs(diff)*price, 2)
             
             if diff_usd > 9:
-                                     
                 self.notifier.send_error('Check balance', f"Correccion de balances: Symbol: {symbol.name}, Diff: {diff}, Diff Usd: {diff_usd}")
+                
             # try:
             #     price = float(self.client.get_symbol_ticker(symbol=symbol.tic)['price'])
             #     self.get_asset_balances(symbol.asset)
@@ -242,6 +242,7 @@ class Margin_account():
         
         buy_amount = self.check_funds(buy_amount_0*price, 'BUY', price)
         check = False
+        # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount)
         
         if buy_amount > 0:
             order_qty = self.round_decimals_up(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
@@ -249,6 +250,8 @@ class Margin_account():
             stop_price = round((actual_price*1.001), self.price_precision[symbol.asset])
             
             try:
+                self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'zero')
+
                 self.get_asset_balances(symbol.asset)
     
                 if self.loans[symbol.asset] > 0:
@@ -257,31 +260,26 @@ class Margin_account():
                     side_effect = 'MARGIN_BUY'
                     
                 try:
+                    self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first pre')
                     buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
+                    self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first')
                     buy_open_order['action'] = action
                     symbol.open_order_id = buy_open_order
                     if symbol.side == 'Long':
                         self.have_open_order[symbol.asset]['Long'] = True
                     else:
                         self.have_open_order[symbol.asset]['Short'] = True
-                    # fecha = datetime.utcfromtimestamp(buy_open_order['transactTime'] / 1000).strftime('%d/%m/%Y %H:%M')                    
-                    # new_row = self.notifier.tables['open_orders'](Date=fecha, Name=symbol.name, Asset=buy_open_order['symbol'], Action = action, Side='BUY', Price = buy_open_order['price'], Quantity = buy_open_order['origQty'], orderId=buy_open_order['orderId'])
-                    # sql_session.add(new_row)
-                    # sql_session.commit()
                     check = True
                 except BinanceAPIException as e:
                     if e.code == -2010:
                         buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                        self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
                         buy_open_order['action'] = action
                         symbol.open_order_id = buy_open_order
                         if symbol.side == 'Long':
                             self.have_open_order[symbol.asset]['Long'] = True
                         else:
                             self.have_open_order[symbol.asset]['Short'] = True
-                        # fecha = datetime.utcfromtimestamp(buy_open_order['transactTime'] / 1000).strftime('%d/%m/%Y %H:%M')                    
-                        # new_row = self.notifier.tables['open_orders'](Date=fecha, Name=symbol.name, Asset=buy_open_order['symbol'], Action = action, Side='BUY', Price = buy_open_order['price'], Quantity = buy_open_order['origQty'], orderId=buy_open_order['orderId'])
-                        # sql_session.add(new_row)
-                        # sql_session.commit()
                         check = True
                 
             except BinanceAPIException as e:
@@ -304,6 +302,7 @@ class Margin_account():
         
         buy_amount = self.check_funds(buy_amount_0*price, 'SELL', price)
         check = False
+        # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount)
         
         if buy_amount > 0:
             order_qty = self.round_decimals_down(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
@@ -320,30 +319,24 @@ class Margin_account():
                 
                 try:
                     sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
+                    self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first')
                     sell_open_order['action'] = action
                     symbol.open_order_id = sell_open_order
                     if symbol.side == 'Long':
                         self.have_open_order[symbol.asset]['Long'] = True
                     else:
                         self.have_open_order[symbol.asset]['Short'] = True
-                    # fecha = datetime.utcfromtimestamp(sell_open_order['transactTime'] / 1000).strftime('%d/%m/%Y %H:%M')                    
-                    # new_row = self.notifier.tables['open_orders'](Date=fecha, Name=symbol.name, Asset=sell_open_order['symbol'], Action = action, Side='SELL', Price = sell_open_order['price'], Quantity = sell_open_order['origQty'], orderId=sell_open_order['orderId'])
-                    # sql_session.add(new_row)
-                    # sql_session.commit()
                     check = True
                 except BinanceAPIException as e:
                     if e.code == -2010:
                         sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                        self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
                         sell_open_order['action'] = action
                         symbol.open_order_id = sell_open_order
                         if symbol.side == 'Long':
                             self.have_open_order[symbol.asset]['Long'] = True
                         else:
                             self.have_open_order[symbol.asset]['Short'] = True
-                        # fecha = datetime.utcfromtimestamp(sell_open_order['transactTime'] / 1000).strftime('%d/%m/%Y %H:%M')                    
-                        # new_row = self.notifier.tables['open_orders'](Date=fecha, Name=symbol.name, Asset=sell_open_order['symbol'], Action = action, Side='SELL', Price = sell_open_order['price'], Quantity = sell_open_order['origQty'], orderId=sell_open_order['orderId'])
-                        # sql_session.add(new_row)
-                        # sql_session.commit()
                         check = True
                 
             except BinanceAPIException as e:
@@ -425,11 +418,6 @@ class Margin_account():
             total_commission = np.sum(executed_commission)
             self.notifier.register_output('Action', symbol.asset, symbol.side, order['action'] + ' Order Filled ' + str(open_order['orderId']))
             
-            # order_id_to_delete = order['orderId']
-            # delete_statement = delete(self.notifier.tables['open_orders']).where(self.notifier.tables['open_orders'].orderId == order_id_to_delete)
-            # sql_session.execute(delete_statement)
-            # sql_session.commit()
-            
             symbol.open_order_id = []
             if symbol.side == 'Long':
                 self.have_open_order[symbol.asset]['Long'] = False
@@ -444,11 +432,7 @@ class Margin_account():
                 symbol.close_order(date, average_price, total_amount, total_commission)
                 
             self.can_check_balance = symbol
-            # self.check_balances(symbol)
-                
-            # new_row = self.notifier.tables['balances'](Date='Post Order Filled', Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = 'Previous Check', Action = order['action'])
-            # sql_session.add(new_row)
-            # sql_session.commit()
+           
         except Exception as e:
             self.notifier.send_error('Check Filled Order', f"Error: {e}, Name: {symbol.name}, ID: {symbol.open_order_id['orderId']}")
             

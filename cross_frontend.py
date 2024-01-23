@@ -446,7 +446,7 @@ class Frontend():
             # Mostrar la tabla en el dashboard de Streamlit
             st.plotly_chart(fig)
             
-            selected_columns = ['Date', 'Open_point', 'Average_point', 'Average_price', 'Close_point', 'Open_trail_point', 'Average_trail_point', 'Close_trail_point']
+            selected_columns = ['Date', 'Price', 'Open_point', 'Average_point', 'Average_price', 'Close_point', 'Open_trail_point', 'Average_trail_point', 'Close_trail_point']
             df_status_subset = df_status[selected_columns]
 
             fig = go.Figure(data=[go.Table(
@@ -589,7 +589,7 @@ class Frontend():
         }
         
         now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second) - timedelta(minutes=3)
-        period = (now - datetime(2024, 1, 10, 16, 19, 0)).total_seconds()/86400
+        period = (now - datetime(2024, 1, 23, 17, 0, 0)).total_seconds()/86400
         #ACTUALIZAR AL INICIO
         
         df_aggregated = df_tr1.groupby('Name').agg(aggregation_functions).reset_index()
@@ -641,7 +641,7 @@ class Frontend():
             showlegend=False,
             title={'text': 'Transacciones'},
             width=1200,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
-            height=1300  # Altura de la tabla, puedes ajustarlo según tus necesidades
+            height=1400  # Altura de la tabla, puedes ajustarlo según tus necesidades
         )
         
         st.plotly_chart(fig)
@@ -697,13 +697,13 @@ class Frontend():
             plot_bgcolor='white',
             font=dict(family='Arial', size=12, color='black'),
             showlegend=False,
-            title={'text': 'Status'},
-            width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
+            title={'text': 'Balances'},
+            width=1400,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
             height=1000  # Altura de la tabla, puedes ajustarlo según tus necesidades
         )
         
         st.plotly_chart(fig)
-    
+        
         return
     
     def margin_page(self):

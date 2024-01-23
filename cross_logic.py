@@ -98,7 +98,7 @@ for i in inputs:
     assets.append(i['asset'])
 assets = set(assets)
 
-backup = False
+backup = True
 
 if __name__ == '__main__':
     
@@ -140,7 +140,16 @@ if __name__ == '__main__':
         master.init_params(False)  
         master.account.notifier.register_output('Info', 'general', 'general', 'System initialized')
         print('System initialized')
-    
+        for symbol in master.symbol_list:
+            if symbol.side == 'Long':
+                for item in master.account.client.get_margin_account()['userAssets']:
+                    if item['asset'] == symbol.asset:
+                        asset_balance = master.account.round_decimals_down(float(item['free']), master.account.amount_precision[symbol.asset])
+                        price = float(master.account.client.get_symbol_ticker(symbol=symbol.tic)['price'])
+                        if asset_balance > 5/price:
+                            amount = master.account.round_decimals_down(asset_balance, master.account.amount_precision[symbol.asset])
+                            sell_order = master.account.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=amount)
+            
     print('Start Operating')
     
     
@@ -369,3 +378,4 @@ if __name__ == '__main__':
                 
                 finally:
                     conexion.close()
+    

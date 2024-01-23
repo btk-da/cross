@@ -13,10 +13,25 @@ class Notifier():
         self.tables = {}
         self.token = '6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4'
         
-        self.eqs = {'gorka':25971, 'aita':41629, 'inaki':15650, 'nacho':1349, 'total':89185}
+        self.eqs = {'gorka':26627, 'aita':41875, 'inaki':15742, 'nacho':1357, 'total':90215}
         self.parts = {'gorka':63.7, 'aita':23.9, 'inaki':9, 'nacho':0.8}
         self.ids = {'gorka':'-1002116297039', 'aita':'-1001517241898', 'inaki':'-1002079190459', 'nacho':'-1002080234130', 'error':'-1002041194998', 'comms':'-1001966519898', 'general':'-1002023987289'}
         
+    def send_order_placed_trial(self, action, symbol, price, amount, place):
+        
+        message = ('#' + str(action) + '_TRY_TO_PLACE' + '\n' + 
+                   'Place: ' + str(place) + '\n' +
+                   'Symbol: ' + str(symbol.name) + '\n' + 
+                   'Price: ' + str(price) + '\n' + 
+                   'Amount: ' + str(round(amount, 5)) + '\n' + 
+                   'Cost: ' + str(round(amount*price, 2)) + '$')
+        try:  
+            requests.post('https://api.telegram.org/bot' + self.token + '/sendMessage', data={'chat_id': self.ids['comms'], 'text': message, 'parse_mode': 'HTML'})
+            self.register_output('Action', symbol.asset, symbol.side, str(action) + ' placed')
+        except Exception as e:
+            print(str(action) + ' Placed Order Post Error')
+            self.register_output('Error', symbol.asset, symbol.side, 'Order Placed Post Error: ' + str(e))
+        return
     def send_order_placed(self, action, symbol, price, amount):
         
         message = ('#' + str(action) + '_PLACED' + '\n' + 
@@ -129,6 +144,23 @@ class Notifier():
         message = ('#ERROR' + '\n' + 
                    'Symbol: ' + str(symbol) + '\n' + 
                    'Error: ' + error)
+        try:  
+            requests.post('https://api.telegram.org/bot' + self.token + '/sendMessage', data={'chat_id': self.ids['error'], 'text': message, 'parse_mode': 'HTML'})
+        except Exception as e:
+            print('Send Error Post Error' + str(e))
+        return
+    
+    def send_order_check_fail(self, symbol, order):
+        
+        message = ('#ORDER PLACING FAILED' + '\n' + 
+                   'Symbol: ' + str(symbol.name) + '\n' +
+                   'Order: ' + str(order) + '\n' +
+                   'Can Open: ' + symbol.can_open + '\n' +
+                   'Can Open Trail : ' + symbol.can_open_trail + '\n' +
+                   'Can Average: ' + symbol.can_average + '\n' +
+                   'Can Average Trail: ' + symbol.can_average_trail + '\n' +
+                   'Can Close: ' + symbol.can_close + '\n' +
+                   'Can Close Trail: ' + symbol.can_close_trail)
         try:  
             requests.post('https://api.telegram.org/bot' + self.token + '/sendMessage', data={'chat_id': self.ids['error'], 'text': message, 'parse_mode': 'HTML'})
         except Exception as e:

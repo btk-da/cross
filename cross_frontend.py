@@ -589,7 +589,7 @@ class Frontend():
         }
         
         now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second) - timedelta(minutes=3)
-        period = (now - datetime(2024, 1, 23, 17, 0, 0)).total_seconds()/86400
+        period = (now - datetime(2024, 2, 6, 16, 0, 0)).total_seconds()/86400
         #ACTUALIZAR AL INICIO
         
         df_aggregated = df_tr1.groupby('Name').agg(aggregation_functions).reset_index()
@@ -670,7 +670,7 @@ class Frontend():
             showlegend=False,
             title={'text': 'Transacciones'},
             width=1400,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
-            height=200  # Altura de la tabla, puedes ajustarlo según tus necesidades
+            height=400  # Altura de la tabla, puedes ajustarlo según tus necesidades
         )
         
         # Mostrar la tabla en el dashboard de Streamlit
@@ -707,55 +707,6 @@ class Frontend():
         return
     
     def margin_page(self):
-    
-        # df_mar = pd.read_sql_table('margin', self.conn, parse_dates=['Date'])
-        # general_margin = df_mar.iloc[-1]['Margin']
-        
-        # fig_leverage = go.Figure(data=[go.Bar(x=[0], y=[general_margin])])
-
-        # fig_leverage.add_trace(go.Bar(x=[0], y=[margin_list[n]], orientation='v', marker=dict(color='orange'), width=0.5), row=1, col=n+1)
-
-       
-        # margin_list = [general_margin, btc_margin, eth_margin, bnb_margin, ada_margin, xrp_margin, ltc_margin, sol_margin, atom_margin, bch_margin, doge_margin, dot_margin, eos_margin, link_margin, trx_margin]
-        
-        # # Creamos una figura con tres subplots en una fila
-        # fig_leverage = make_subplots(rows=1, cols=5, subplot_titles=("General Margin", "BTC Margin", "ETH Margin", "BNB Margin", "ADA Margin",
-        #                                                              "XRP Margin","LTC Margin","SOL Margin","ATOM Margin","BCH Margin"
-        #                                                              "DOGE Margin","DOT Margin","EOS Margin","LINK Margin","TRX Margin"))
-        
-        # # Agregamos las tres barras en los subplots correspondientes
-        # n = 0
-        # for i in margin_list:
-            
-        #     fig_leverage.add_trace(go.Bar(x=[0], y=[margin_list[n]], orientation='v', marker=dict(color='orange'), width=0.5), row=1, col=n+1)
-        #     n = n + 1
-        
-        # # fig_leverage.add_trace(go.Bar(x=[0], y=[general_margin], orientation='v', marker=dict(color='orange'), width=0.5), row=1, col=1)
-        # # fig_leverage.add_trace(go.Bar(x=[0], y=[btc_margin], orientation='v', marker=dict(color='orange'), width=0.5), row=1, col=2)
-        # # fig_leverage.add_trace(go.Bar(x=[0], y=[eth_margin], orientation='v', marker=dict(color='orange'), width=0.5), row=1, col=3)
-        # # fig_leverage.add_trace(go.Bar(x=[0], y=[bnb_margin], orientation='v', marker=dict(color='orange'), width=0.5), row=1, col=4)
-        # # fig_leverage.add_trace(go.Bar(x=[0], y=[ada_margin], orientation='v', marker=dict(color='orange'), width=0.5), row=1, col=5)       
-        
-        # y_range = [0, 14]
-        # # Configuramos el diseño de los subplots
-        # for i in range(1, 6):  # Iterar sobre los tres subplots
-        #     fig_leverage.update_yaxes(type='log', range=y_range, row=1, col=i)  # Establecer el rango en el eje y para cada subplot
-        #     fig_leverage.update_xaxes(showticklabels=False, row=1, col=i)  # Ocultar las etiquetas del eje x
-    
-        # # Configuramos el diseño de los subplots
-        # fig_leverage.update_layout(
-        #     xaxis=dict(showticklabels=False),
-        #     yaxis=dict(title='Leverage'),
-        #     showlegend=False,
-        #     height=400,
-        #     width=800,  # Aumentamos el ancho total para alojar las tres gráficas
-        #     margin=dict(l=50, r=50, t=50, b=50),
-        #     paper_bgcolor='white',
-        #     plot_bgcolor='white',
-        # )
-        
-        # Ajustamos el tamaño del recuadro al tamaño del gráfico
-        # st.plotly_chart(fig_leverage, use_container_width=True)
         
         df_nav = pd.read_sql_table('nav', self.conn, parse_dates=['Date'])
         fig = go.Figure()
@@ -771,6 +722,27 @@ class Frontend():
             margin=dict(l=50, r=50, t=50, b=50),
             paper_bgcolor='white',
             plot_bgcolor='white',
+        )
+        
+        st.plotly_chart(fig)
+        
+        fig = go.Figure(data=[go.Table(
+            header=dict(values=list(df_nav.columns),
+                        fill_color='paleturquoise',
+                        align='left'),
+            cells=dict(values=[df_nav[col] for col in df_nav.columns],
+                       fill_color='lavender',
+                       align='left'))])
+        
+        fig.update_layout(
+            margin=dict(l=0, r=0, t=0, b=0),
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            font=dict(family='Arial', size=12, color='black'),
+            showlegend=False,
+            title={'text': 'Nav'},
+            width=1400,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
+            height=100  # Altura de la tabla, puedes ajustarlo según tus necesidades
         )
         
         st.plotly_chart(fig)

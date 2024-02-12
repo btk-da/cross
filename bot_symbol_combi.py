@@ -199,38 +199,42 @@ class Symbol_combi(object):
             else:
                 self.account.teor_balances[symbol.asset] = self.account.teor_balances[symbol.asset] - symbol.asset_acc
                 
-                price = float(self.account.client.get_symbol_ticker(symbol=symbol.tic)['price'])
-                if self.account.balances[symbol.asset]*price <= 8:
-                    asset_balance = 0
-                else:
-                    asset_balance = self.account.balances[symbol.asset]
+                # price = float(self.account.client.get_symbol_ticker(symbol=symbol.tic)['price'])
+                # if self.account.balances[symbol.asset]*price <= 9:
+                #     asset_balance = 0
+                # else:
+                #     asset_balance = self.account.balances[symbol.asset]
                     
-                if abs(self.account.teor_balances[symbol.asset])*price <= 8:
-                    asset_balance_t = 0
-                else:
-                    asset_balance_t = self.account.teor_balances[symbol.asset]
+                # if abs(self.account.teor_balances[symbol.asset])*price <= 9:
+                #     asset_balance_t = 0
+                # else:
+                #     asset_balance_t = self.account.teor_balances[symbol.asset]
                 
-                if asset_balance_t > 0:
-                    diff = abs(asset_balance_t - asset_balance)
-                    diff_usdt = diff * price
-                else:
-                    diff = abs(abs(asset_balance_t) - self.account.loans[symbol.asset])
-                    diff_usdt = diff * price
+                # if asset_balance_t > 0:
+                #     diff = abs(self.account.teor_balances[symbol.asset] - self.account.balances[symbol.asset])
+                #     diff_usdt = diff * price
+                # else:
+                #     diff = abs(abs(asset_balance_t) - self.account.loans[symbol.asset])
+                #     diff_usdt = diff * price
                  
-                if diff_usdt >= 10:
-                    open_orders = self.account.client.get_open_margin_orders(symbol=symbol.tic)
-                    if len(open_orders) == 0 and self.account.have_open_order[symbol.asset]['Long'] == False and self.account.have_open_order[symbol.asset]['Short'] == False:
-                        self.account.notifier.send_error('Check balance', f"Correccion de balances: Symbol: {symbol.name}, Diff: {diff_usdt}")
-                    
-                new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = symbol.asset, Balance = asset_balance, T_balance = asset_balance_t, Loan = self.account.loans[symbol.asset], Diff_usdt = round(diff_usdt), Diff = diff, Price = price, Long = self.account.have_open_order[symbol.asset]['Long'], Short = self.account.have_open_order[symbol.asset]['Short'])
+                # if diff_usdt >= 10:
+                #     open_orders = self.account.client.get_open_margin_orders(symbol=symbol.tic)
+                #     if len(open_orders) == 0 and self.account.have_open_order[symbol.asset]['Long'] == False and self.account.have_open_order[symbol.asset]['Short'] == False:
+                #         self.account.notifier.send_error('Check balance', f"Correccion de balances: Symbol: {symbol.name}, Diff: {diff_usdt}")
+                #         self.account.check_balances(symbol, price)
+
+                # new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = symbol.asset, Balance = asset_balance, T_balance = asset_balance_t, Loan = self.account.loans[symbol.asset], Diff_usdt = round(diff_usdt), Diff = diff, Price = price, Long = self.account.have_open_order[symbol.asset]['Long'], Short = self.account.have_open_order[symbol.asset]['Short'])
+                # sql_session.add(new_row)
+                real, teor, loan, diff_usdt, diff, price = self.account.check_balances(symbol)
+                new_row = self.account.notifier.tables['balances'](Date=str(time), Asset = symbol.asset, Balance = real, T_balance = teor, Loan = loan, Diff_usdt = round(diff_usdt), Diff = diff, Price = price, Long = self.account.have_open_order[symbol.asset]['Long'], Short = self.account.have_open_order[symbol.asset]['Short'])
                 sql_session.add(new_row)
 
         sql_session.commit()
         
-        if len(self.account.can_check_balance) != 0:
-            self.account.check_balances(self.account.can_check_balance)
-            self.account.can_check_balance = []
-            
+        # if len(self.account.can_check_balance) != 0:
+        #     self.account.check_balances(self.account.can_check_balance)
+        #     self.account.can_check_balance = []
+
         return
     
     def update_open_tr(self):

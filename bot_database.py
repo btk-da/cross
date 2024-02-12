@@ -112,14 +112,16 @@ def init_database(assets, backup):
         Date = Column(String(50))
         Nav = Column(Float)
         Bnb_nav = Column(Float)
+        Margin = Column(Float)
+        Bnb_margin = Column(Float)
     tables['nav'] = Table6
     
-    class Table7(sql_base):
-        __tablename__ = 'margin'
-        id = Column(Integer, primary_key=True)
-        Date = Column(String(50))
-        Margin = Column(Float)
-    tables['margin'] = Table7
+    # class Table7(sql_base):
+    #     __tablename__ = 'margin'
+    #     id = Column(Integer, primary_key=True)
+    #     Date = Column(String(50))
+    #     Margin = Column(Float)
+    # tables['margin'] = Table7
     
     class Table8(sql_base):
         __tablename__ = 'funds'

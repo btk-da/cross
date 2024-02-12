@@ -34,7 +34,7 @@ class Margin_account():
         self.teor_balances = {}
         
         self.have_open_order = {}
-        self.can_check_balance = []
+        #self.can_check_balance = []
         
         self.client = Client('HxC4DjBJjOv6lqiDdgnF1c7SW3SYYKnmvRyg1KAW4UY4oa5Ndbz3yAi7Z4TtXky9', 'RwwVEqxVzRmtcxf8sAvMcu6kwz6OxEtxsbcTBDTjgHrsmzqgpCjFcBq0aeW93rEU')
         self.price_precision = {'BTC':2, 'ETH':2, 'BNB':1, 'XRP':4, 'ADA':4, 'LTC':2, 'SOL':2, 'ATOM':3, 'BCH':1, 
@@ -91,100 +91,61 @@ class Margin_account():
     
     def check_balances(self, symbol):
         
-        open_orders = self.client.get_open_margin_orders(symbol=symbol.tic)
-        
-        if len(open_orders) == 0 and self.have_open_order[symbol.asset]['Long'] == False and self.have_open_order[symbol.asset]['Short'] == False:
-            
+        try:
             real = self.balances[symbol.asset]
             teor = self.teor_balances[symbol.asset]
             loan = self.loans[symbol.asset]
-            
             price = float(self.client.get_symbol_ticker(symbol=symbol.tic)['price'])
             
-            diff = round(teor - real, self.amount_precision[symbol.asset])
-            diff_usd = round(abs(diff)*price, 2)
+            if teor < 0:
+                diff = round(abs(teor) - loan, self.amount_precision[symbol.asset])
+            else:
+                diff = round(teor - real, self.amount_precision[symbol.asset])
+                
+            diff_usdt = round(abs(diff)*price, 2)
+            open_orders = self.client.get_open_margin_orders(symbol=symbol.tic)
             
-            if diff_usd > 9:
-                self.notifier.send_error('Check balance', f"Correccion de balances: Symbol: {symbol.name}, Diff: {diff}, Diff Usd: {diff_usd}")
+            if len(open_orders) == 0 and self.have_open_order[symbol.asset]['Long'] == False and self.have_open_order[symbol.asset]['Short'] == False and diff_usdt > 9:
                 
-            # try:
-            #     price = float(self.client.get_symbol_ticker(symbol=symbol.tic)['price'])
-            #     self.get_asset_balances(symbol.asset)
-        
-            #     real = self.balances[symbol.asset]
-            #     teor = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset])
-            #     loan = self.loans[symbol.asset]
-            #     correction = False
-                
-            #     if teor >= 0:
-            #         diff_usd = round((teor - loan), self.amount_precision[symbol.asset])
-                    
-            #         if abs(diff_usd) * price > 6:
+                #if diff_usdt > 9:
+                if teor > 0:
+                    if real - teor > 0:
+                        action = 'SELL AND REPAY'
+                        qty = round(real - teor, self.amount_precision[symbol.asset])
+                        self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=qty, sideEffectType='AUTO_REPAY')
+                    else:
+                        action = 'MARGIN BUY'
+                        qty = round(teor - real, self.amount_precision[symbol.asset])
+                        self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=qty, sideEffectType='MARGIN_BUY')
+                else:
+                    if abs(teor) - loan > 0:
+                        action = 'MARGIN SELL'
+                        qty = round(abs(teor) - loan, self.amount_precision[symbol.asset])
+                        self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=qty, sideEffectType='MARGIN_BUY')
+                    else:
+                        action = 'BUY AND REPAY'
+                        qty = round(loan - abs(teor), self.amount_precision[symbol.asset])
+                        self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=qty, sideEffectType='AUTO_REPAY')
                         
-            #             if diff_usd > 0:
-            #                 correction = 'BUY ' + str(abs(diff_usd))
-            #                 self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=round(diff_usd, self.amount_precision[symbol.asset]), sideEffectType='AUTO_REPAY')
-            #             elif diff_usd < 0:
-            #                 correction = 'SELL ' + str(abs(diff_usd))
-            #                 self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=abs(round(diff_usd, self.amount_precision[symbol.asset])), sideEffectType='AUTO_REPAY')
-                            
-            #                 self.get_asset_balances(symbol.asset)
-            #                 if self.loans[symbol.asset] > 0:
-            #                     self.client.repay_margin_loan(asset=symbol.asset, amount=self.loans[symbol.asset])
-                
-            #     else:
-            #         diff_usd = round((abs(teor) - loan), self.amount_precision[symbol.asset])
-                    
-            #         if abs(diff_usd) * price > 6:
-                        
-            #             if diff_usd > 0:
-            #                 correction = 'BORROW ' + str(abs(round(diff_usd, self.amount_precision[symbol.asset])))                    
-            #                 self.client.create_margin_loan(asset=symbol.asset, amount=diff_usd)
-            #             elif diff_usd < 0:
-            #                 correction = 'REPAY ' + str(abs(round(diff_usd, self.amount_precision[symbol.asset])))  
-            #                 self.client.repay_margin_loan(asset=symbol.asset, amount=abs(diff_usd))
-                            
-            #             self.get_asset_balances(symbol.asset)
-            #             if self.balances[symbol.asset] > 0:
-            #                 self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=abs(round(self.balances[symbol.asset], self.amount_precision[symbol.asset])), sideEffectType='AUTO_REPAY')
-                            
-            #         if loan > 0 and real >= loan:
-            #             correction = 'REPAY ' + str(abs(loan)) 
-            #             self.client.repay_margin_loan(asset=symbol.asset, amount=loan)
-                
-            #     if correction != False:
-            #         self.notifier.send_error('Check balance', f"Correccion de balances: Symbol: {symbol.name}, Correccion: {correction}")
+                self.notifier.send_error('Balance Correction', f"Symbol: {symbol.name}, Action: {action}, Diff: {diff}, Diff Usd: {diff_usdt}")
+                  
+        except Exception as e:
+            self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Name: {symbol.name}, Correction: {action}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}")
 
-                    
-            #     # new_row = self.notifier.tables['balances'](Date=str(time), Asset = symbol.asset, Base_balance = self.balances[self.base_coin], Base_t_balance = self.t_balances[self.base_coin], Base_loan = self.loans[self.base_coin], Asset_balance = self.balances[symbol.asset], Asset_t_balance = round(self.t_balances[symbol.asset], self.amount_precision[symbol.asset]), Asset_loan = self.loans[symbol.asset], Correction = correction, Action = action)
-            #     # sql_session.add(new_row)
-            #     # try:
-            #     #     sql_session.commit()
-            #     # except exc.OperationalError as e:
-            #     #     self.notifier.send_error('Check balance Commit', f"Error de conexión a la base de datos: {e}, Symbol: {symbol.name}")
-            #     #     sql_session.rollback()
-                
-            # except BinanceAPIException as e:
-            #     if e.code == -1100:
-            #         self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Name: {symbol.name}, Correction: {correction}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}")
-            #     elif e.code == -3041:
-            #         self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Name: {symbol.name}, Correction: {correction}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}")
-                
-            # except Exception as e:
-            #     self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Name: {symbol.name}, Correction: {correction}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}")
-
-        return
+        return [real, teor, loan, diff_usdt, diff, price]
             
     def calculate_nav(self, time):
         try:
             asset_value = self.balances[self.base_coin]
             liabilities = self.loans[self.base_coin]
-            self.nav = self.balances[self.base_coin] - self.loans[self.base_coin]
+            # self.nav = self.balances[self.base_coin] - self.loans[self.base_coin]
             for asset in self.assets:
                 price = float(self.client.get_symbol_ticker(symbol=asset+self.base_coin)['price'])
                 asset_value = asset_value + self.balances[asset]*price
                 liabilities = liabilities + self.loans[asset]*price
-                self.nav = self.nav + self.balances[asset]*price - self.loans[asset]*price
+                # self.nav = self.nav + self.balances[asset]*price - self.loans[asset]*price
+                
+            self.nav = asset_value - liabilities
             
             if liabilities == 0 or asset_value/liabilities > 999:
                 self.margin = 999
@@ -198,9 +159,7 @@ class Margin_account():
                 margin = margin_account['marginLevel']
             btc_price = float(self.client.get_symbol_ticker(symbol='BTCUSDT')['price'])
             
-            new_row = self.notifier.tables['nav'](Date=str(time), Nav=self.nav, Bnb_nav=float(margin_account['totalNetAssetOfBtc'])*btc_price)
-            sql_session.add(new_row)
-            new_row = self.notifier.tables['margin'](Date=str(time), Margin=margin)
+            new_row = self.notifier.tables['nav'](Date=str(time), Nav=self.nav, Bnb_nav=float(margin_account['totalNetAssetOfBtc'])*btc_price, Margin=self.margin, Bnb_margin=margin)
             sql_session.add(new_row)
             
             try:
@@ -250,7 +209,7 @@ class Margin_account():
             stop_price = round((actual_price*1.001), self.price_precision[symbol.asset])
             
             try:
-                self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'zero')
+                # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'zero')
 
                 self.get_asset_balances(symbol.asset)
     
@@ -260,9 +219,9 @@ class Margin_account():
                     side_effect = 'MARGIN_BUY'
                     
                 try:
-                    self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first pre')
+                    # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first pre')
                     buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
-                    self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first')
+                    # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first')
                     buy_open_order['action'] = action
                     symbol.open_order_id = buy_open_order
                     if symbol.side == 'Long':
@@ -273,7 +232,7 @@ class Margin_account():
                 except BinanceAPIException as e:
                     if e.code == -2010:
                         buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
-                        self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
+                        # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
                         buy_open_order['action'] = action
                         symbol.open_order_id = buy_open_order
                         if symbol.side == 'Long':
@@ -319,7 +278,7 @@ class Margin_account():
                 
                 try:
                     sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
-                    self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first')
+                    # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first')
                     sell_open_order['action'] = action
                     symbol.open_order_id = sell_open_order
                     if symbol.side == 'Long':
@@ -330,7 +289,7 @@ class Margin_account():
                 except BinanceAPIException as e:
                     if e.code == -2010:
                         sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
-                        self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
+                        # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
                         sell_open_order['action'] = action
                         symbol.open_order_id = sell_open_order
                         if symbol.side == 'Long':
@@ -431,7 +390,7 @@ class Margin_account():
             elif order['action'] == 'CLOSE':
                 symbol.close_order(date, average_price, total_amount, total_commission)
                 
-            self.can_check_balance = symbol
+            #self.can_check_balance = symbol
            
         except Exception as e:
             self.notifier.send_error('Check Filled Order', f"Error: {e}, Name: {symbol.name}, ID: {symbol.open_order_id['orderId']}")

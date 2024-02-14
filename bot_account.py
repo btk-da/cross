@@ -130,7 +130,7 @@ class Margin_account():
                 self.notifier.send_error('Balance Correction', f"Symbol: {symbol.name}, Action: {action}, Diff: {diff}, Diff Usd: {diff_usdt}")
                   
         except Exception as e:
-            self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Name: {symbol.name}, Correction: {action}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}")
+            self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Name: {symbol.name}, Correction: {action}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}, Diff: {diff}")
 
         return [real, teor, loan, diff_usdt, diff, price]
             
@@ -264,7 +264,8 @@ class Margin_account():
         # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount)
         
         if buy_amount > 0:
-            order_qty = self.round_decimals_down(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
+            order_qty = max(self.round_decimals_down(buy_amount, self.amount_precision[symbol.asset]), self.round_decimals_up(self.initial_amount/price, self.amount_precision[symbol.asset]))
+            # order_qty = self.round_decimals_down(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
             stop_price = round(actual_price*0.999, self.price_precision[symbol.asset])
             

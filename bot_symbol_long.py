@@ -70,7 +70,6 @@ class Symbol_long(object):
         return
         
     def open_trailing(self, time, price):
-        
         if len(self.open_order_id) != 0:
             if price < self.base_open_trail:
                 self.base_open_trail = price
@@ -111,7 +110,6 @@ class Symbol_long(object):
         return
         
     def open_order(self, time, price, amount, comision):
-        
         self.open_time = time
         self.open_price = price
 
@@ -164,7 +162,7 @@ class Symbol_long(object):
         return
     
     def average_trailing(self, time, price):
-
+        
         if len(self.open_order_id) != 0:
             if price < self.base_average_trail:
                 self.base_average_trail = price
@@ -314,7 +312,7 @@ class Symbol_long(object):
         sql_session.add(new_row)
         new_row = self.master.account.notifier.tables['orders'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, Type='Sell', BuyLevel=self.buy_level, Price=price, Amount=amount, Cost=round(self.acc), Commission=comision)
         sql_session.add(new_row)
-        new_row = self.master.account.notifier.tables['transactions'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, BuyLevel=self.buy_level, Cost=round(self.acc), Profit=profit*100, ProfitUsd=float(usd_profit), Commission=self.commission, Duration=str(self.duration))
+        new_row = self.master.account.notifier.tables['transactions'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, BuyLevel=self.buy_level, Cost=round(self.acc), Profit=profit*100, ProfitUsd=float(usd_profit), Covered=covered, Commission=self.commission, Duration=str(self.duration))
         sql_session.add(new_row)
         try:
             sql_session.commit()
@@ -368,6 +366,7 @@ class Symbol_long(object):
             self.open_trailing(time, price)
             
         if self.can_open == True and self.switch == True:
+            
             if self.master.wr_list[self.nick]['Short'] >= self.level and self.master.wr_list[self.nick]['Short'] > self.master.wr_list[self.nick]['Long']:
                 self.buy_distribution = np.cumsum(self.k**np.array(np.arange(0,50)) * self.master.account.initial_amount).astype('float64') * self.pond
             else:

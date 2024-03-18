@@ -36,9 +36,11 @@ class Frontend():
         self.engine = create_engine('mysql+pymysql://server0:donoso850@localhost/bot_database')
         self.conn = self.engine.connect()
         self.symbol_names = []
-        assets = ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'LTC', 'SOL', 'ATOM', 'BCH', 'DOGE', 'DOT', 'EOS', 'LINK', 
-                  'TRX', 'SHIB', 'AVAX', 'XLM', 'UNI', 'ETC', 'FIL', 'HBAR', 'VET', 'NEAR', 'GRT', 'AAVE', 'DASH', 
-                  'MATIC', 'ICP', 'RUNE', 'IMX', 'OP', 'LDO', 'INJ']
+        assets = ['BTC', 'ETH', 'LTC', 'ADA', 'EOS', 'XRP', 'ETC', 'TRX', 'VET', 'LINK', 'FET', 'ATOM', 'MATIC', 'ALGO', 'FTM',
+          'DOGE', 'CHZ', 'STX', 'BCH', 'COTI', 'CHR', 'MKR', 'DOT', 'PAXG', 'SOL', 'TRB', 'AVAX', 'EGLD', 'RUNE',
+          'UNI', 'FIL', 'INJ', 'NEAR', 'AXS', 'ROSE', 'GRT', 'CFX', 'SUPER', 'AR', 'ICP', 'SHIB', 'MINA', 'GALA',
+          'ENS', 'RNDR', 'IMX', 'APE', 'OP', 'LUNC', 'APT', 'AGIX', 'ARB', 'ID', 'SUI', 'MAV'] 
+
         for i in assets:
             self.symbol_names.append(i + '--L')
             self.symbol_names.append(i + '--S')
@@ -164,6 +166,45 @@ class Frontend():
                 serialized_switch = pickle.dumps(switch_params)
                 front_logic_socket.send(serialized_switch)
                 st.warning(str(switch_params) + ' sent')
+                
+        except OSError as e:
+            st.warning('Server occupied at return, try again : ' + str(e))
+        except Exception as e:
+            st.warning('ERROR: ' + str(e))
+        finally:
+            front_logic_socket.close()
+            st.warning('Conection closed')
+
+        return 
+    
+    def switch_engine(self):
+        
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as logic_server:
+                logic_server.bind(('localhost', self.logic_front))
+                logic_server.listen(1)
+                conexion, direccion = logic_server.accept()
+                data = conexion.recv(1024)
+                texto = data.decode('utf-8')
+                st.warning('Switch engine')
+                conexion.close()
+                    
+        except OSError as e:
+            st.warning('Server occupied, try again' + str(e))
+        except Exception as e:
+            st.warning('ERROR: ' + str(e))
+        finally:
+            conexion.close()
+
+        try:
+            time.sleep(5)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as front_logic_socket:
+                front_logic_socket.connect(('localhost', self.front_logic))
+                init_message = 'ENGINE'
+                message = init_message.encode('utf-8')
+                front_logic_socket.send(message)
+                st.warning(init_message + ' sent')
+                time.sleep(5)
                 
         except OSError as e:
             st.warning('Server occupied at return, try again : ' + str(e))
@@ -567,13 +608,16 @@ class Frontend():
             
         st.write("<h3 style='text-align: center;'>TRANSACTIONS</h3>", unsafe_allow_html=True)
     
-        def timedelta_to_hours(td):
-            return td.total_seconds() / 3600
+        # def timedelta_to_hours(td):
+        #     return td.total_seconds() / 3600
+        
+        def timedelta_to_days(td):
+            return td.total_seconds() / (3600 * 24)
         
         # Función para convertir y agregar la columna Duration en horas
         def convert_and_aggregate_duration(df):
             df['Duration'] = pd.to_timedelta(df['Duration'])
-            df['Duration'] = df['Duration'].apply(timedelta_to_hours)
+            df['Duration'] = df['Duration'].apply(timedelta_to_days)
             return df
        
         # Aplicar la función convert_and_aggregate_duration para convertir y calcular el promedio de Duration en horas
@@ -589,11 +633,11 @@ class Frontend():
         }
         
         now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second) - timedelta(minutes=3)
-        period = (now - datetime(2024, 2, 6, 16, 0, 0)).total_seconds()/86400
+        period = (now - datetime(2024, 3, 12, 13, 15, 0)).total_seconds()/86400
         #ACTUALIZAR AL INICIO
         
         df_aggregated = df_tr1.groupby('Name').agg(aggregation_functions).reset_index()
-        df_aggregated['Rent'] = ((1 + df_aggregated['ProfitUsd']/2500) ** (1/(period/365)) - 1) * 100
+        df_aggregated['Rent'] = ((1 + df_aggregated['ProfitUsd']/1800) ** (1/(period/365)) - 1) * 100
         df_aggregated['Rent'] = df_aggregated['Rent'].round(2)
         name_counts = df_tr1['Name'].value_counts().reindex(df_aggregated['Name']).fillna(0).astype(int)
         df_aggregated['Num Ops'] = name_counts.reset_index(drop=True)
@@ -604,7 +648,7 @@ class Frontend():
         df_aggregated = df_aggregated.rename(columns={
         'Rent': 'Rent Anual',
         'ProfitUsd': 'Profit (Total $)',
-        'Duration': 'Duration (Average Hours)',
+        'Duration': 'Duration (Average Days)',
         'Profit': 'Profit (Average %)',
         'Cost': 'Cost (Average $)',
         'BuyLevel': 'Buy Level (Average)'
@@ -615,9 +659,9 @@ class Frontend():
         df_aggregated0 = df_tr0.groupby('Name').agg(aggregation_functions).reset_index()
         df_aggregated['Max Acc ($)'] = df_aggregated0['Cost']
     
-        grouped = {'Name':'TOTAL', 'Rent Anual':round(((1 + sum(df_tr['ProfitUsd'])/85000) ** (1/(period/365)) - 1) * 100, 2),
+        grouped = {'Name':'TOTAL', 'Rent Anual':round(((1 + sum(df_tr['ProfitUsd'])/98000) ** (1/(period/365)) - 1) * 100, 2),
                    'Num Ops':len(df_tr['ProfitUsd']), 'Profit (Total $)':round(sum(df_tr['ProfitUsd']),2),
-                   'Duration (Average Hours)':np.around(np.mean(df_tr['Duration']),2), 'Profit (Average %)':np.around(np.mean(df_tr['Profit']),2),
+                   'Duration (Average Days)':np.around(np.mean(df_tr['Duration']),2), 'Profit (Average %)':np.around(np.mean(df_tr['Profit']),2),
                    'Cost (Average $)':np.around(np.mean(df_tr['Cost']),2), 'Buy Level (Average)':np.around(np.mean(df_tr['BuyLevel']),1),
                    'Max Acc ($)':max(df_aggregated0['Cost'])}
         df_total = pd.DataFrame([grouped])
@@ -705,7 +749,7 @@ class Frontend():
         st.plotly_chart(fig)
         
         return
-    
+    """
     def margin_page(self):
         
         df_nav = pd.read_sql_table('nav', self.conn, parse_dates=['Date'])
@@ -747,6 +791,127 @@ class Frontend():
         
         st.plotly_chart(fig)
         
+        return
+    """
+    def margin_page(self):
+        
+        st.write("<h2 style='text-align: center;'>DASHBOARD</h2>", unsafe_allow_html=True)
+
+        
+        df_tr = pd.read_sql_table('transactions', self.conn, parse_dates=['Date'])
+        df_tr = df_tr.sort_values(by=['Date'])
+        
+        now = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second) - timedelta(minutes=3)
+        period = (now - datetime(2024, 3, 12, 13, 15, 0)).total_seconds()/86400
+        
+        # df_tr['Duration'] = pd.to_timedelta(df_tr['Duration'])
+        df_tr['Duration'] = pd.to_timedelta(df_tr['Duration']).dt.total_seconds() / (3600 * 24)
+
+        
+        grouped = {'Name':'TOTAL', 'Rent Anual':round(((1 + sum(df_tr['ProfitUsd'])/98000) ** (1/(period/365)) - 1) * 100, 2),
+                   'Max Acc ($)':max(df_tr['Cost']), 
+                   'Max Duration': np.around(np.amax(df_tr['Duration']), 2), 
+                   'Ops':len(df_tr['ProfitUsd']), 
+                   'Profit ($)':round(sum(df_tr['ProfitUsd']),2),
+                   'Duration': np.around(np.mean(df_tr['Duration']), 2), 
+                   'Profit (%)':np.around(np.mean(df_tr['Profit']),2),
+                   'Cost ($)':np.around(np.mean(df_tr['Cost']),2), 
+                   'Buy Level':np.around(np.mean(df_tr['BuyLevel']),1)}
+        
+        df_total = pd.DataFrame([grouped])
+        
+        # Crear la tabla de Plotly
+        fig = go.Figure(data=[go.Table(
+            header=dict(values=list(df_total.columns),
+                        fill_color='paleturquoise',
+                        align='left'),
+            cells=dict(values=[df_total[col] for col in df_total.columns],
+                       fill_color='lavender',
+                       align='left'))])
+        
+        fig.update_layout(
+            margin=dict(l=0, r=0, t=0, b=0),
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            font=dict(family='Arial', size=12, color='black'),
+            showlegend=False,
+            title={'text': 'Resultados'},
+            width=1000,  # Ancho de la tabla, puedes ajustarlo según tus necesidades
+            height=100  # Altura de la tabla, puedes ajustarlo según tus necesidades
+        )
+        
+        st.plotly_chart(fig)
+        
+        
+        df_nav = pd.read_sql_table('nav', self.conn, parse_dates=['Date'])
+        
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df_nav['Date'], y=df_nav['Bnb_nav'], mode='lines', name='Nav'))
+        if df_tr.size > 0:
+            fig.add_trace(go.Scatter(x=df_tr['Date'], y=np.cumsum(df_tr['ProfitUsd']) + 98692, mode='lines', name='Equity', line=dict(color='darkgreen')))
+
+        fig.update_layout(
+            title_text='NAV',
+            title_x=0.5,
+            title_font_size=24,
+            showlegend=False,
+            height=400,
+            width=1000,
+            margin=dict(l=50, r=50, t=50, b=50),
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+        )
+        
+        st.plotly_chart(fig)
+    
+        
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df_nav['Date'], y=1/df_nav['Bnb_margin'], mode='lines', name='Margin'))
+        
+        fig.update_layout(
+            title_text='MARGIN',
+            title_x=0.5,
+            title_font_size=24,
+            showlegend=False,
+            height=400,
+            width=1000,
+            margin=dict(l=50, r=50, t=50, b=50),
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            # yaxis=dict(type='log', showgrid=False),
+            yaxis=dict(range=[0, 0.8]),
+        )
+        
+        st.plotly_chart(fig)
+        
+       
+        # # Leer los datos del DataFrame df_nav
+        # df_nav = pd.read_sql_table('nav', self.conn, parse_dates=['Date'])
+        
+        # # Crear la figura con subtramas
+        # fig = make_subplots(specs=[[{"secondary_y": True}]])
+        
+        # # Agregar la primera traza para el eje principal (izquierdo)
+        # fig.add_trace(go.Scatter(x=df_nav['Date'], y=df_nav['Bnb_nav'], mode='lines', name='Nav'), secondary_y=False)
+        
+        # # Agregar la segunda traza para el eje secundario (derecho)
+        # fig.add_trace(go.Scatter(x=df_nav['Date'], y=df_nav['Bnb_margin'], mode='lines', name='Margin'), secondary_y=True)
+        
+        # # Configurar el diseño de la figura
+        # fig.update_layout(
+        #     title_text='NAV and MARGIN',
+        #     title_x=0.5,
+        #     title_font_size=24,
+        #     height=400,
+        #     width=1200,
+        #     margin=dict(l=50, r=50, t=50, b=50),
+        #     paper_bgcolor='white',
+        #     plot_bgcolor='white',
+        # )
+        
+        # # Mostrar el gráfico en Streamlit
+        # st.plotly_chart(fig)
+                
         return
             
 

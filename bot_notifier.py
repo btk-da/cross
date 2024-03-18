@@ -13,9 +13,9 @@ class Notifier():
         self.tables = {}
         self.token = '6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4'
         
-        self.eqs = {'gorka':25692, 'aita':42086, 'inaki':15822, 'nacho':1363.95, 'total':89602}
-        self.parts = {'gorka':63.7, 'aita':23.9, 'inaki':9, 'nacho':0.8}
-        self.ids = {'gorka':'-1002116297039', 'aita':'-1001517241898', 'inaki':'-1002079190459', 'nacho':'-1002080234130', 'error':'-1002041194998', 'comms':'-1001966519898', 'general':'-1002023987289'}
+        self.eqs = {'gorka':10908, 'aita':41998, 'saioa':24000, 'inaki':15789, 'nacho':1361, 'total':98684}
+        self.parts = {'gorka':73.32, 'aita':21.77, 'saioa':7.3, 'inaki':4.8, 'nacho':0.41}
+        self.ids = {'gorka':'-1002116297039', 'aita':'-1001517241898', 'saioa':'-1002118100147', 'inaki':'-1002079190459', 'nacho':'-1002080234130', 'error':'-1002041194998', 'comms':'-1001966519898', 'general':'-1002023987289'}
         
     def send_order_placed_trial(self, action, symbol, price, amount, place):
         
@@ -167,15 +167,16 @@ class Notifier():
             print('Send Error Post Error' + str(e))
         return
     
-    def send_balances(self, balances, t_balances, loans, asset):
-        
-        message = ('#BALANCES' + '\n' + 
-                   'Base balance: ' + str(round(balances['USDT'],2)) + '\n' + 
-                   'Base T balance: ' + str(round(t_balances['USDT'],2)) + '\n' + 
-                   'Asset balance: ' + str(round(balances[asset],5)) + '\n' + 
-                   'Asset T balance: ' + str(round(t_balances[asset],5)) + '\n' + 
-                   'Base loan: ' + str(round(loans['USDT'],2)) + '\n' + 
-                   'Asset loan: ' + str(round(loans[asset],5)))
+    def send_balance_correction(self, asset, action, balance, t_balance, loan, diff_usdt, diff, price):
+                
+        message = ('#BALANCE CORRECTION' + '\n' + 
+                   'Asset: ' + str(asset) + '\n' + 
+                   'Action: ' + str(action) + '\n' + 
+                   'Balance: ' + str(round(balance, 5)) + '\n' + 
+                   'T_Balance: ' + str(round(t_balance, 5)) + '\n' + 
+                   'Loan: ' + str(round(loan, 5)) + '\n' + 
+                   'Diff USDT: ' + str(round(diff_usdt)) + '\n' + 
+                   'Diff: ' + str(round(diff, 5)))
         try:  
             requests.post('https://api.telegram.org/bot' + self.token + '/sendMessage', data={'chat_id': self.ids['comms'], 'text': message, 'parse_mode': 'HTML'})
         except Exception as e:

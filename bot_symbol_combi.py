@@ -244,8 +244,6 @@ class Symbol_combi(object):
         
         for symbol in self.symbol_list:
             
-            self.account.notifier.register_output('Update start', symbol.asset, symbol.name, 'Symbols first update try')
-
             try:
                 time = datetime(datetime.now().year, datetime.now().month, datetime.now().day, datetime.now().hour, datetime.now().minute, datetime.now().second)
     
@@ -266,8 +264,6 @@ class Symbol_combi(object):
                 new_row = self.account.notifier.tables[str(symbol.asset)](Date=str(time), Price=price)
                 sql_session.add(new_row)
                 sql_session.commit()
-                self.account.notifier.register_output('Update pre logic', symbol.asset, symbol.name, 'Symbols pre logic try')
-
                 symbol.logic(time, price)
                 
                 self.account.notifier.register_output('Update', symbol.asset, symbol.name, 'Symbols Updated')

@@ -112,7 +112,6 @@ class Symbol_short(object):
         return
 
     def open_order(self, time, price, amount, comision):
-
         self.open_time = time
         self.open_price = price
         
@@ -207,7 +206,7 @@ class Symbol_short(object):
         return
 
     def average_order(self, time, price, amount, comision):
-        
+
         self.open_amount_list = np.append(self.open_amount_list, [amount*price])
         self.acc = np.sum([self.open_amount_list])
         self.open_asset_amount_list = np.append(self.open_asset_amount_list, [amount])
@@ -297,7 +296,7 @@ class Symbol_short(object):
         return
 
     def close_order(self, time, price, amount, comision):
-        
+
         profit = 1 - price/self.average_price
         usd_profit = profit * self.acc - self.commission
         self.duration = time - self.open_time
@@ -315,7 +314,7 @@ class Symbol_short(object):
         sql_session.add(new_row)
         new_row = self.master.account.notifier.tables['orders'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, Type='Buy', BuyLevel=self.buy_level, Price=price, Amount=amount, Cost=round(self.acc), Commission=comision)
         sql_session.add(new_row)
-        new_row = self.master.account.notifier.tables['transactions'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, BuyLevel=self.buy_level, Cost=round(self.acc), Profit=profit*100, ProfitUsd=float(usd_profit), Commission=self.commission, Duration=str(self.duration))
+        new_row = self.master.account.notifier.tables['transactions'](Date=str(time), Name=self.name, Asset=self.asset, Side=self.side, BuyLevel=self.buy_level, Cost=round(self.acc), Profit=profit*100, ProfitUsd=float(usd_profit), Covered=covered, Commission=self.commission, Duration=str(self.duration))
         sql_session.add(new_row)
         try:
             sql_session.commit()
@@ -394,7 +393,7 @@ class Symbol_short(object):
             self.average_trailing(time, price)
             
         if price > self.average_point and self.can_average == True:
-            
+
             if len(self.open_order_id) != 0:
                 self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=self.open_order_id['orderId'])
             self.base_average_trail = price
@@ -418,7 +417,7 @@ class Symbol_short(object):
             self.close_trailing(time, price)
                         
         if price < self.close_point and self.can_close == True:
-            
+
             if len(self.open_order_id) != 0:
                 self.master.account.client.cancel_margin_order(symbol=self.tic, orderId=self.open_order_id['orderId'])
             self.base_close_trail = price

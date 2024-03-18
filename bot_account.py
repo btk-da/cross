@@ -16,10 +16,9 @@ class Margin_account():
         self.base_coin = 'USDT'
         self.assets = []
         self.available_funds = 0
-        self.max_leverage = 4
+        self.max_leverage = 5
         self.max_leverage_funds = self.available_funds * self.max_leverage
-        # self.indiv_max_leverage_funds = self.max_leverage_funds/29
-        self.initial_amount = 10
+        self.initial_amount = 100
         
         self.nav = 0
         self.margin = 999
@@ -36,15 +35,24 @@ class Margin_account():
         self.have_open_order = {}
         #self.can_check_balance = []
         
-        self.client = Client('HxC4DjBJjOv6lqiDdgnF1c7SW3SYYKnmvRyg1KAW4UY4oa5Ndbz3yAi7Z4TtXky9', 'RwwVEqxVzRmtcxf8sAvMcu6kwz6OxEtxsbcTBDTjgHrsmzqgpCjFcBq0aeW93rEU')
-        self.price_precision = {'BTC':2, 'ETH':2, 'BNB':1, 'XRP':4, 'ADA':4, 'LTC':2, 'SOL':2, 'ATOM':3, 'BCH':1, 
-                                'DOGE':5, 'DOT':3, 'EOS':3, 'LINK':3, 'TRX':5, 'SHIB':8, 'AVAX':2, 'XLM':4, 'UNI':3, 
-                                'ETC':2, 'FIL':3, 'HBAR':4, 'VET':5, 'NEAR':3, 'GRT':4, 'AAVE':2, 'DASH':2, 'MATIC':4, 
-                                'ICP':3 , 'RUNE':3, 'IMX':4, 'OP':3, 'LDO':3, 'INJ':2, 'USDT':2}
-        self.amount_precision = {'BTC':5, 'ETH':4, 'BNB':3, 'XRP':0, 'ADA':1, 'LTC':3, 'SOL':2, 'ATOM':2, 'BCH':3,
-                                'DOGE':0, 'DOT':2, 'EOS':1, 'LINK':2, 'TRX':1, 'SHIB':0, 'AVAX':2, 'XLM':0, 'UNI':2, 
-                                'ETC':2, 'FIL':2, 'HBAR':0, 'VET':1, 'NEAR':1, 'GRT':0, 'AAVE':3, 'DASH':3, 'MATIC':1, 
-                                'ICP':2 , 'RUNE':1, 'IMX':2, 'OP':2, 'LDO':2, 'INJ':1, 'USDT':2}
+        self.client = Client('KkepCPWDVxlgJBqns1Bl9vD0kxyop44uviwGZLUHHoK91lDENCvX0GxQeLfESzE7', 'wKWqIapmSnAvH5GJ1BwCdlg4s7Onq1FCu9iXszAtz3UWEEBmpovDBtU1IEd6RjYw')        
+        self.price_precision = {'BTC': 2, 'ETH': 2, 'LTC': 2, 'ADA': 4, 'EOS': 3, 'XRP': 4, 'ETC': 2, 'TRX': 5, 
+                                'VET': 5, 'LINK': 3, 'FET': 4, 'ATOM': 3, 'MATIC': 4, 'ALGO': 4, 'FTM': 4, 
+                                'DOGE': 5, 'CHZ': 5, 'STX': 4, 'BCH': 1, 'COTI': 5, 'CHR': 4, 'MKR': 0, 
+                                'DOT': 3, 'PAXG': 0, 'SOL': 2, 'TRB': 2, 'AVAX': 2, 'EGLD': 2, 'RUNE': 3, 
+                                'UNI': 3, 'FIL': 3, 'INJ': 2, 'NEAR': 3, 'AXS': 3, 'ROSE': 5, 'GRT': 4, 
+                                'CFX': 4, 'SUPER': 4, 'AR': 3, 'ICP': 3, 'SHIB': 8, 'MINA': 4, 'GALA': 5, 
+                                'ENS': 2, 'RNDR': 3, 'IMX': 4, 'APE': 3, 'OP': 3, 'LUNC': 8, 'APT': 4, 
+                                'AGIX': 5, 'ARB': 4, 'ID': 5, 'SUI': 4, 'MAV': 4}
+        self.amount_precision = {'BTC': 5, 'ETH': 4, 'LTC': 3, 'ADA': 1, 'EOS': 1, 'XRP': 0, 'ETC': 2, 'TRX': 1, 
+                                 'VET': 1, 'LINK': 2, 'FET': 0, 'ATOM': 2, 'MATIC': 1, 'ALGO': 0, 'FTM': 0, 
+                                 'DOGE': 0, 'CHZ': 0, 'STX': 1, 'BCH': 3, 'COTI': 0, 'CHR': 0, 'MKR': 4, 
+                                 'DOT': 2, 'PAXG': 4, 'SOL': 2, 'TRB': 2, 'AVAX': 2, 'EGLD': 2, 'RUNE': 1, 
+                                 'UNI': 2, 'FIL': 2, 'INJ': 1, 'NEAR': 1, 'AXS': 2, 'ROSE': 1, 'GRT': 0, 
+                                 'CFX': 0, 'SUPER': 0, 'AR': 2, 'ICP': 2, 'SHIB': 0, 'MINA': 1, 'GALA': 0, 
+                                 'ENS': 2, 'RNDR': 2, 'IMX': 2, 'APE': 2, 'OP': 2, 'LUNC': 2, 'APT': 2,
+                                 'AGIX': 0, 'ARB': 1, 'ID': 0, 'SUI': 1, 'MAV': 0}
+
         return
         
     def round_decimals_up(self, number, decimals):
@@ -107,30 +115,30 @@ class Margin_account():
             
             if len(open_orders) == 0 and self.have_open_order[symbol.asset]['Long'] == False and self.have_open_order[symbol.asset]['Short'] == False and diff_usdt > 9:
                 
-                #if diff_usdt > 9:
-                if teor > 0:
-                    if real - teor > 0:
-                        action = 'SELL AND REPAY'
-                        qty = round(real - teor, self.amount_precision[symbol.asset])
-                        self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=qty, sideEffectType='AUTO_REPAY')
+                if diff_usdt > 9:
+                    if teor > 0:
+                        if real - teor > 0:
+                            action = 'SELL AND REPAY'
+                            qty = round(real - teor, self.amount_precision[symbol.asset])
+                            self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=qty, sideEffectType='AUTO_REPAY')
+                        else:
+                            action = 'MARGIN BUY'
+                            qty = round(teor - real, self.amount_precision[symbol.asset])
+                            self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=qty, sideEffectType='MARGIN_BUY')
                     else:
-                        action = 'MARGIN BUY'
-                        qty = round(teor - real, self.amount_precision[symbol.asset])
-                        self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=qty, sideEffectType='MARGIN_BUY')
-                else:
-                    if abs(teor) - loan > 0:
-                        action = 'MARGIN SELL'
-                        qty = round(abs(teor) - loan, self.amount_precision[symbol.asset])
-                        self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=qty, sideEffectType='MARGIN_BUY')
-                    else:
-                        action = 'BUY AND REPAY'
-                        qty = round(loan - abs(teor), self.amount_precision[symbol.asset])
-                        self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=qty, sideEffectType='AUTO_REPAY')
-                        
-                self.notifier.send_error('Balance Correction', f"Symbol: {symbol.name}, Action: {action}, Diff: {diff}, Diff Usd: {diff_usdt}")
+                        if abs(teor) - loan > 0:
+                            action = 'MARGIN SELL'
+                            qty = round(abs(teor) - loan, self.amount_precision[symbol.asset])
+                            self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=qty, sideEffectType='MARGIN_BUY')
+                        else:
+                            action = 'BUY AND REPAY'
+                            qty = round(loan - abs(teor), self.amount_precision[symbol.asset])
+                            self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=qty, sideEffectType='AUTO_REPAY')
+                            
+                    self.notifier.send_balance_correction(symbol.asset, action, real, teor, loan, diff_usdt, diff, price)
                   
         except Exception as e:
-            self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Name: {symbol.name}, Correction: {action}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}, Diff: {diff}")
+            self.notifier.send_error('Check Balance', f"Error: {e}, Asset: {symbol.asset}, Name: {symbol.name}, Quantity: {qty}, Correction: {action}, Balance: {str(real)}, Balance_T: {str(teor)}, Loan: {loan}, Diff: {diff}")
 
         return [real, teor, loan, diff_usdt, diff, price]
             
@@ -159,7 +167,7 @@ class Margin_account():
                 margin = margin_account['marginLevel']
             btc_price = float(self.client.get_symbol_ticker(symbol='BTCUSDT')['price'])
             
-            new_row = self.notifier.tables['nav'](Date=str(time), Nav=self.nav, Bnb_nav=float(margin_account['totalNetAssetOfBtc'])*btc_price, Margin=self.margin, Bnb_margin=margin)
+            new_row = self.notifier.tables['nav'](Date=str(time), Nav=self.nav, Bnb_nav=float(margin_account['totalNetAssetOfBtc'])*btc_price, Margin=self.margin, Bnb_margin=margin, Acc=round(self.short_acc-self.long_acc))
             sql_session.add(new_row)
             
             try:
@@ -198,30 +206,29 @@ class Margin_account():
         return output_amount/price
     
     def create_buy_order(self, symbol, buy_amount_0, price, action, actual_price):
-        
+
         buy_amount = self.check_funds(buy_amount_0*price, 'BUY', price)
         check = False
-        # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount)
         
         if buy_amount > 0:
             order_qty = self.round_decimals_up(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
-            stop_price = round((actual_price*1.001), self.price_precision[symbol.asset])
+            stop_price = round((actual_price*1.0005), self.price_precision[symbol.asset])
             
             try:
-                # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'zero')
-
                 self.get_asset_balances(symbol.asset)
     
-                if self.loans[symbol.asset] > 0:
+                for i in self.client.get_margin_account()['userAssets']:
+                    if i['asset'] == 'USDT':
+                        free_base = float(i['free'])
+    
+                if free_base > order_qty*price and self.loans[symbol.asset] > 0:
                     side_effect = 'AUTO_REPAY'
                 else:
                     side_effect = 'MARGIN_BUY'
-                    
+                
                 try:
-                    # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first pre')
                     buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
-                    # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first')
                     buy_open_order['action'] = action
                     symbol.open_order_id = buy_open_order
                     if symbol.side == 'Long':
@@ -229,17 +236,20 @@ class Margin_account():
                     else:
                         self.have_open_order[symbol.asset]['Short'] = True
                     check = True
-                except BinanceAPIException as e:
-                    if e.code == -2010:
-                        buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
-                        # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
-                        buy_open_order['action'] = action
-                        symbol.open_order_id = buy_open_order
-                        if symbol.side == 'Long':
-                            self.have_open_order[symbol.asset]['Long'] = True
-                        else:
-                            self.have_open_order[symbol.asset]['Short'] = True
-                        check = True
+                # except BinanceAPIException as e:
+                #     if e.code == -2010:
+                #         buy_open_order = self.client.create_margin_order(symbol=symbol.tic, side='BUY', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                #         # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
+                #         buy_open_order['action'] = action
+                #         symbol.open_order_id = buy_open_order
+                #         if symbol.side == 'Long':
+                #             self.have_open_order[symbol.asset]['Long'] = True
+                #         else:
+                #             self.have_open_order[symbol.asset]['Short'] = True
+                #         check = True
+                except Exception as e:
+                    self.notifier.send_error(symbol.tic, f"Buy Order Creation Failed: {e};  Action: {action};  Qty: {order_qty}; Free Base: {free_base}; Price: {order_price}; Stop Price: {stop_price}; Effect: {side_effect}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}")
+
                 
             except BinanceAPIException as e:
                 if e.code == -3045:
@@ -253,7 +263,7 @@ class Margin_account():
                     self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}")
 
             except Exception as e:
-                self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Amount: {buy_amount}; Price: {price}; Effect: {side_effect}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}")
+                self.notifier.send_error(symbol.name, f"Buy Order Creation Failed: {e};  Action: {action};  Qty: {order_qty}; Free Base: {free_base}; Price: {order_price}; Stop Price: {stop_price}; Effect: {side_effect}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}")
 
         return check
     
@@ -261,25 +271,26 @@ class Margin_account():
         
         buy_amount = self.check_funds(buy_amount_0*price, 'SELL', price)
         check = False
-        # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount)
         
         if buy_amount > 0:
             order_qty = max(self.round_decimals_down(buy_amount, self.amount_precision[symbol.asset]), self.round_decimals_up(self.initial_amount/price, self.amount_precision[symbol.asset]))
-            # order_qty = self.round_decimals_down(max(buy_amount, self.initial_amount/price), self.amount_precision[symbol.asset])
             order_price = round(price, self.price_precision[symbol.asset])
-            stop_price = round(actual_price*0.999, self.price_precision[symbol.asset])
-            
+            stop_price = round(actual_price*0.9995, self.price_precision[symbol.asset])
+
             try:
                 self.get_base_balances()
                 
-                if self.loans[self.base_coin] > 0:
+                for i in self.client.get_margin_account()['userAssets']:
+                    if i['asset'] == symbol.asset:
+                        free_asset = float(i['free'])
+                        
+                if free_asset > order_qty and self.loans[self.base_coin] > 0:
                     side_effect = 'AUTO_REPAY'
                 else:
                     side_effect = 'MARGIN_BUY'
-                
+            
                 try:
                     sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='STOP_LOSS_LIMIT', quantity=order_qty, price=order_price, stopPrice=stop_price, sideEffectType=side_effect, timeInForce='GTC')
-                    # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'first')
                     sell_open_order['action'] = action
                     symbol.open_order_id = sell_open_order
                     if symbol.side == 'Long':
@@ -287,17 +298,20 @@ class Margin_account():
                     else:
                         self.have_open_order[symbol.asset]['Short'] = True
                     check = True
-                except BinanceAPIException as e:
-                    if e.code == -2010:
-                        sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
-                        # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
-                        sell_open_order['action'] = action
-                        symbol.open_order_id = sell_open_order
-                        if symbol.side == 'Long':
-                            self.have_open_order[symbol.asset]['Long'] = True
-                        else:
-                            self.have_open_order[symbol.asset]['Short'] = True
-                        check = True
+                # except BinanceAPIException as e:
+                #     if e.code == -2010:
+                #         sell_open_order = self.client.create_margin_order(symbol=symbol.tic, side='SELL', type='LIMIT', quantity=order_qty, price=order_price, sideEffectType=side_effect, timeInForce='GTC')
+                #         # self.notifier.send_order_placed_trial(action, symbol, price, buy_amount, 'second')
+                #         sell_open_order['action'] = action
+                #         symbol.open_order_id = sell_open_order
+                #         if symbol.side == 'Long':
+                #             self.have_open_order[symbol.asset]['Long'] = True
+                #         else:
+                #             self.have_open_order[symbol.asset]['Short'] = True
+                #         check = True
+                except Exception as e:
+                    self.notifier.send_error(symbol.tic, f"Sell Order Creation Failed: {e};  Action: {action};  Qty: {order_qty}; Free Asset: {free_asset}; Price: {order_price}; Stop Price: {stop_price}; Effect: {side_effect}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}")
+
                 
             except BinanceAPIException as e:
                 if e.code == -3045:
@@ -311,7 +325,7 @@ class Margin_account():
                     self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}")
 
             except Exception as e:
-                self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Amount: {order_qty}; Price: {order_price}; Effect: {side_effect}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}")
+                self.notifier.send_error(symbol.name, f"Sell Order Creation Failed: {e};  Action: {action};  Qty: {order_qty}; Free Asset: {free_asset}; Price: {order_price}; Stop Price: {stop_price}; Effect: {side_effect}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}")
 
         return check
     

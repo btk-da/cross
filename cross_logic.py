@@ -25,6 +25,9 @@ from sqlalchemy.exc import OperationalError
 
 url = 'https://api.telegram.org/bot6332743294:AAFKcqzyfKzXAPSGhR6eTKLPMyx0tpCzeA4/sendMessage'
 
+inputs = [{'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'ADA', 'level': 20, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'ADA', 'level': 20, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'AGIX', 'level': 5, 'pond': 5, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'AGIX', 'level': 5, 'pond': 5, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'ALGO', 'level': 10, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'ALGO', 'level': 10, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'APE', 'level': 5, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'APE', 'level': 5, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'APT', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'APT', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'AR', 'level': 15, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'AR', 'level': 15, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'ARB', 'level': 5, 'pond': 2, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'ARB', 'level': 5, 'pond': 2, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.5, 'asset': 'ATOM', 'level': 20, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.5, 'asset': 'ATOM', 'level': 20, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.4, 'asset': 'AVAX', 'level': 5, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.4, 'asset': 'AVAX', 'level': 5, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'AXS', 'level': 10, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'AXS', 'level': 10, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'BCH', 'level': 15, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'BCH', 'level': 15, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.4, 'asset': 'BTC', 'level': 5, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.4, 'asset': 'BTC', 'level': 5, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'CFX', 'level': 5, 'pond': 2, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'CFX', 'level': 5, 'pond': 2, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.2, 'asset': 'CHR', 'level': 10, 'pond': 5, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.2, 'asset': 'CHR', 'level': 10, 'pond': 5, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'CHZ', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'CHZ', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'COTI', 'level': 20, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'COTI', 'level': 20, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.4, 'asset': 'DOGE', 'level': 10, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.4, 'asset': 'DOGE', 'level': 10, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.4, 'asset': 'DOT', 'level': 5, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.4, 'asset': 'DOT', 'level': 5, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.4, 'asset': 'EGLD', 'level': 20, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.4, 'asset': 'EGLD', 'level': 20, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'ENS', 'level': 10, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'ENS', 'level': 10, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'EOS', 'level': 10, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'EOS', 'level': 10, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'ETC', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'ETC', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'ETH', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'ETH', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'FET', 'level': 5, 'pond': 5, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'FET', 'level': 5, 'pond': 5, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'FIL', 'level': 5, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'FIL', 'level': 5, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'FTM', 'level': 5, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'FTM', 'level': 5, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.2, 'asset': 'GALA', 'level': 5, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.2, 'asset': 'GALA', 'level': 5, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.4, 'asset': 'GRT', 'level': 10, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.4, 'asset': 'GRT', 'level': 10, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.4, 'asset': 'ICP', 'level': 5, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.4, 'asset': 'ICP', 'level': 5, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'ID', 'level': 5, 'pond': 20, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'ID', 'level': 5, 'pond': 20, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'IMX', 'level': 15, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'IMX', 'level': 15, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'INJ', 'level': 20, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'INJ', 'level': 20, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'LINK', 'level': 10, 'pond': 20, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'LINK', 'level': 10, 'pond': 20, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'LTC', 'level': 10, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'LTC', 'level': 10, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.2, 'asset': 'LUNC', 'level': 10, 'pond': 50, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.2, 'asset': 'LUNC', 'level': 10, 'pond': 50, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.2, 'asset': 'MATIC', 'level': 5, 'pond': 20, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.2, 'asset': 'MATIC', 'level': 5, 'pond': 20, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'MAV', 'level': 5, 'pond': 2, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'MAV', 'level': 5, 'pond': 2, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.5, 'asset': 'MINA', 'level': 5, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.5, 'asset': 'MINA', 'level': 5, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'MKR', 'level': 5, 'pond': 50, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'MKR', 'level': 5, 'pond': 50, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'NEAR', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'NEAR', 'level': 15, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.4, 'asset': 'OP', 'level': 5, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.4, 'asset': 'OP', 'level': 5, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 1, 'profit': 0.5, 'k': 1.4, 'asset': 'PAXG', 'level': 5, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -1, 'profit': 0.5, 'k': 1.4, 'asset': 'PAXG', 'level': 5, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'RNDR', 'level': 15, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'RNDR', 'level': 15, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'ROSE', 'level': 5, 'pond': 2, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'ROSE', 'level': 5, 'pond': 2, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'RUNE', 'level': 10, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'RUNE', 'level': 10, 'pond': 5, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'SHIB', 'level': 5, 'pond': 2, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'SHIB', 'level': 5, 'pond': 2, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.5, 'asset': 'SOL', 'level': 5, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.5, 'asset': 'SOL', 'level': 5, 'pond': 50, 'buy_trail': 1.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'STX', 'level': 15, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'STX', 'level': 15, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.3, 'asset': 'SUI', 'level': 15, 'pond': 2, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.3, 'asset': 'SUI', 'level': 15, 'pond': 2, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.2, 'asset': 'SUPER', 'level': 5, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.2, 'asset': 'SUPER', 'level': 5, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.2, 'asset': 'TRB', 'level': 20, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.2, 'asset': 'TRB', 'level': 20, 'pond': 20, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 2, 'profit': 0.5, 'k': 1.3, 'asset': 'TRX', 'level': 10, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -2, 'profit': 0.5, 'k': 1.3, 'asset': 'TRX', 'level': 10, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.2, 'asset': 'UNI', 'level': 15, 'pond': 20, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.2, 'asset': 'UNI', 'level': 15, 'pond': 20, 'buy_trail': 2.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.4, 'asset': 'VET', 'level': 20, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.4, 'asset': 'VET', 'level': 20, 'pond': 5, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': 3, 'profit': 0.5, 'k': 1.3, 'asset': 'XRP', 'level': 5, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}, {'drop': -3, 'profit': 0.5, 'k': 1.3, 'asset': 'XRP', 'level': 5, 'pond': 50, 'buy_trail': 0.1, 'sell_trail': 0.1}],
+
+"""
 inputs = [{'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'BTC'},
           {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'BTC'},
           {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'ETH'},
@@ -67,8 +70,8 @@ inputs = [{'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail
           {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'FIL'},
           {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'HBAR'},
           {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'HBAR'},
-          {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'VET'},
-          {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'VET'},
+          # {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'VET'},
+          # {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'VET'},
           {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'NEAR'},
           {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'NEAR'},
           {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'GRT'},
@@ -91,14 +94,14 @@ inputs = [{'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail
           {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'LDO'},
           {'drop': 1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'INJ'},
           {'drop': -1.25, 'profit': 0.5, 'k': 1.33, 'buy_trail':0.25, 'sell_trail':0.15, 'level':0.5, 'pond':5, 'asset': 'INJ'}]
-
+"""
 
 assets = []
-for i in inputs:
+for i in inputs[0]:
     assets.append(i['asset'])
 assets = set(assets)
 
-backup = True
+backup = False
 
 if __name__ == '__main__':
     
@@ -116,7 +119,7 @@ if __name__ == '__main__':
         for i in symbols_backup.keys():
             inputs.append(symbols_backup[i]['params'])
             
-        master.add_symbols(inputs)
+        master.add_symbols(inputs[0])
         master.init_params(True)
             
         for name, data in symbols_backup.items():
@@ -136,8 +139,9 @@ if __name__ == '__main__':
         master.account = account
         sql_tables = init_database(assets, False)
         master.account.notifier.tables = sql_tables
-        master.add_symbols(inputs)
+        master.add_symbols(inputs[0])
         master.init_params(False)  
+        master.account.max_leverage_funds = 350000
         master.account.notifier.register_output('Info', 'general', 'general', 'System initialized')
         print('System initialized')
         for symbol in master.symbol_list:
@@ -149,7 +153,11 @@ if __name__ == '__main__':
                         if asset_balance > 5/price:
                             amount = master.account.round_decimals_down(asset_balance, master.account.amount_precision[symbol.asset])
                             sell_order = master.account.client.create_margin_order(symbol=symbol.tic, side='SELL', type='MARKET', quantity=amount)
-            
+                        asset_loan = float(item['borrowed']) + float(item['interest'])
+                        if asset_loan > 0:
+                            amount = master.account.round_decimals_up(max(5/price, asset_loan), master.account.amount_precision[symbol.asset])
+                            buy_order = master.account.client.create_margin_order(symbol=symbol.tic, side='BUY', type='MARKET', quantity=amount, sideEffectType='AUTO_REPAY')
+
     print('Start Operating')
     
     
@@ -176,7 +184,7 @@ if __name__ == '__main__':
                 master.account.notifier.send_error('General', f"Error de conexión a la base de datos: {e}")
             except Exception as e:
                 master.account.notifier.send_error('General', f'ERROR NO IDENTIFICADO: {e}; Tipo: {type(e)}; Args: {e.args}; Linea: {e.__traceback__.tb_lineno}')
-            time.sleep(30)
+            time.sleep(10)
             
             try: # Conectarse con frontend y pedir instrucciones
                 logic_front_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -219,7 +227,11 @@ if __name__ == '__main__':
                     requests.post(url, data={'chat_id': '-1001802125737', 'text':  'Text received: ' + texto, 'parse_mode': 'HTML'})
                     time.sleep(2)
                 
-                    if 'SWITCH' in texto:
+                    if 'ENGINE' in texto:
+                        requests.post(url, data={'chat_id': '-1001802125737', 'text': 'Engine status: ' + str(master.engine_working), 'parse_mode': 'HTML'})
+                        break                                               
+                        
+                    elif 'SWITCH' in texto:
                         switch_data = conexion.recv(4096)
                         switch_params = pickle.loads(switch_data)
                         requests.post(url, data={'chat_id': '-1001802125737', 'text': 'Side: ' + switch_params['side'] + ' Mode: ' + switch_params['mode'], 'parse_mode': 'HTML'})
@@ -305,7 +317,10 @@ if __name__ == '__main__':
                                     setattr(selected_symbol, attribute_name, edit_params['value'])
                                 warn = 'Changed completed ' + 'Symbol: ' + symbol.name + 'Param: ' + str(edit_params['attribute']) + 'New Value: ' + str(edit_params['value'])
                                 requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
-                                
+                                selected_symbol.trading_points()
+                                warn = 'Symbol: ' + symbol.name + ' Updated'
+                                requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
+
                         else:                               
 
                             selected_symbol = next(symbol for symbol in master.symbol_list if symbol.name == edit_params['name'])
@@ -316,6 +331,9 @@ if __name__ == '__main__':
                                 setattr(selected_symbol, attribute_name, edit_params['value'])
                     
                             warn = 'Changed completed ' + 'Symbol: ' + selected_symbol.name + 'Param: ' + str(attribute_name) + 'New Value: ' + str(edit_params['value'])
+                            requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
+                            selected_symbol.trading_points()
+                            warn = 'Symbol: ' + symbol.name + ' Updated'
                             requests.post(url, data={'chat_id': '-1001802125737', 'text': warn, 'parse_mode': 'HTML'})
 
                         master.engine_working = True

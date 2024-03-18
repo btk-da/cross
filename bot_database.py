@@ -92,6 +92,7 @@ def init_database(assets, backup):
         Cost = Column(Float)
         Profit = Column(Float)
         ProfitUsd = Column(Float)
+        Covered = Column(Float)
         Commission = Column(Float)
         Duration = Column(String(50))
     tables['transactions'] = Table4
@@ -114,6 +115,7 @@ def init_database(assets, backup):
         Bnb_nav = Column(Float)
         Margin = Column(Float)
         Bnb_margin = Column(Float)
+        Acc = Column(Float)
     tables['nav'] = Table6
     
     # class Table7(sql_base):
